@@ -59,6 +59,10 @@ function ScrollToTop() {
 function HomePage() {
   // Prefetch remaining home-page chunks during idle time, same as before.
   useEffect(() => {
+    // Respect Data Saver / 2G: those users only download a section when they scroll to it.
+    const conn = navigator.connection;
+    if (conn && (conn.saveData || /2g/.test(conn.effectiveType || ""))) return undefined;
+
     const prefetch = () =>
       Object.entries(loaders).forEach(([name, load]) => {
         if (

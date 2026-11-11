@@ -375,7 +375,14 @@ const Galaxy = ({
       return found.linked;
     };
     const initial = settingsRef.current;
-    if (!variant(initial.palette.length > 0, false, false, true)) {
+    // Start compiling the base shader now. With KHR_parallel_shader_compile we do NOT
+    // block the main thread waiting for it (render() polls until it is linked); without
+    // the extension we fall back to the original blocking compile.
+    entry(initial.palette.length > 0, false, false);
+    if (
+      !parallel &&
+      !variant(initial.palette.length > 0, false, false, true)
+    ) {
       programs.forEach(
         (found) => found.program && gl.deleteProgram(found.program),
       );
@@ -435,8 +442,19 @@ const Galaxy = ({
       reveal: settingsRef.current.intro && !reduce ? 0 : 1,
     };
     let raf = 0;
+    let poll = 0;
     let last = 0;
     let visible = true;
+
+    // Re-try rendering on the next frame while the shader is still compiling
+    const waitForShader = () => {
+      if (poll) return;
+      poll = requestAnimationFrame(() => {
+        poll = 0;
+        render();
+        wake();
+      });
+    };
 
     // Main render function that sets uniforms and draws
     const render = () => {
@@ -461,8 +479,13 @@ const Galaxy = ({
         s.autoCenterRepulsion > 0 ||
         (s.mouseRepulsion && s.repulsionStrength > 0 && state.active > 0);
       const warp = state.boost > 0;
-      const base = variant(palette, false, false, true);
-      if (!base) return;
+      const baseEntry = entry(palette, false, false);
+      if (baseEntry.done && !baseEntry.linked) return; // shader failed to link
+      const base = variant(palette, false, false, false);
+      if (!base) {
+        waitForShader(); // still compiling off the main thread
+        return;
+      }
       const program =
         (repel || warp ? variant(palette, repel, warp, false) : null) ?? base;
       const u = program.uniforms;
@@ -653,6 +676,7 @@ const Galaxy = ({
     // Cleanup all resources on unmount
     return () => {
       cancelAnimationFrame(raf);
+      cancelAnimationFrame(poll);
       wakeRef.current = null;
       resizeObserver.disconnect();
       intersection.disconnect();

@@ -17,7 +17,10 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="preconnect" href="https://apidev.cloud" crossorigin />
-    <link rel="dns-prefetch" href="https://unpkg.com" />
+    <!-- Earth textures are now self-hosted (/textures/*.webp), so unpkg.com is no longer needed.
+         After you add a hero poster (step 4 of the guide), uncomment this line for a faster LCP:
+    <link rel="preload" as="image" href="/hero-poster.webp" type="image/webp" fetchpriority="high" />
+    -->
 
     <!-- Fonts loaded ONCE, non-render-blocking (replaces the @import that was inside BeeEcosystemSection).
          Only the weights actually used: Manrope 400/600, Sora 600/700, JetBrains Mono 700 -->

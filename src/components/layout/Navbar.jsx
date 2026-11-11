@@ -20,7 +20,7 @@ export default function Navbar() {
               width="160"
               height="48"
               decoding="async"
-              fetchpriority="high"
+              fetchPriority="high"
               className="h-10 sm:h-12 w-auto object-contain"
             />
           </a>

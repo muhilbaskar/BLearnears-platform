@@ -1,4 +1,4 @@
-import React, { lazy, Suspense, useEffect, useRef, useState } from "react";
+import React, { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { m, useInView } from "framer-motion";
 import Galaxy from "../common/Galaxy";
 import useInViewport from "../../hooks/useInViewport";
@@ -6,12 +6,64 @@ import { getPageScale } from "../../utils/pageScale";
 
 // three.js + react-globe.gl are ~700 KB. They are now a SEPARATE chunk that is only
 // downloaded when this section is about to scroll into view.
-const Globe = lazy(() => import("react-globe.gl"));
+const loadGlobe = () => import("react-globe.gl");
+const Globe = lazy(loadGlobe);
 
-// TIP: download these two textures, compress them (2048px wide, JPG/WebP) and serve
-// them from /public (e.g. "/textures/earth.jpg"). Same-origin + CDN cache = faster.
-const EARTH_TEXTURE = "https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg";
-const BUMP_TEXTURE = "https://unpkg.com/three-globe/example/img/earth-topology.png";
+// Textures are now SELF-HOSTED in /public/textures (same origin, long-cache on your CDN)
+// and compressed to WebP: 1.8 MB (unpkg JPG 4096px + PNG) -> ~220 KB (2048px WebP).
+// A 1024px variant is used on Data Saver / 2G / very low-memory devices (~75 KB).
+const BASE = import.meta.env.BASE_URL || "/";
+const EARTH_TEXTURE = `${BASE}textures/earth-blue-marble.webp`;
+const EARTH_TEXTURE_LITE = `${BASE}textures/earth-blue-marble-1024.webp`;
+const BUMP_TEXTURE = `${BASE}textures/earth-topology.webp`;
+
+const shouldUseLiteTexture = () => {
+  if (typeof navigator === "undefined") return false;
+  const c = navigator.connection;
+  const slow = c && (c.saveData || /2g/.test(c.effectiveType || ""));
+  return Boolean(slow) || (navigator.deviceMemory && navigator.deviceMemory <= 2);
+};
+
+// Original remote textures: used ONLY if the self-hosted files cannot be loaded
+// (e.g. /public/textures was not deployed), so the Earth always shows.
+const REMOTE_EARTH = "https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg";
+const REMOTE_BUMP = "https://unpkg.com/three-globe/example/img/earth-topology.png";
+
+const probeImage = (src) =>
+  new Promise((resolve) => {
+    const img = new Image();
+    img.decoding = "async";
+    img.onload = () => resolve(true);
+    img.onerror = () => resolve(false);
+    img.src = src;
+  });
+
+// Checks the local textures once (this also warms the browser cache) and falls back to the
+// remote ones when a local file is missing / not an image.
+let texturePromise = null;
+const resolveTextures = () => {
+  if (!texturePromise) {
+    texturePromise = (async () => {
+      const lite = shouldUseLiteTexture();
+      const localEarth = lite ? EARTH_TEXTURE_LITE : EARTH_TEXTURE;
+      const earthOk = await probeImage(localEarth);
+      if (!earthOk) return { earth: REMOTE_EARTH, bump: lite ? undefined : REMOTE_BUMP };
+      const bumpOk = lite ? false : await probeImage(BUMP_TEXTURE);
+      return { earth: localEarth, bump: bumpOk ? BUMP_TEXTURE : undefined };
+    })();
+  }
+  return texturePromise;
+};
+
+// Warm the browser cache BEFORE the section scrolls into view: the three.js chunk and the
+// textures download in parallel, so the Earth appears the moment the user arrives.
+let earthPrefetched = false;
+const prefetchEarth = () => {
+  if (earthPrefetched || typeof window === "undefined") return;
+  earthPrefetched = true;
+  loadGlobe().catch(() => { earthPrefetched = false; });
+  resolveTextures();
+};
 
 // Global city coordinates (lat/lng) — EXPANDED
 const CITIES = [
@@ -309,12 +361,22 @@ function useStageScale(sectionRef) {
   return scale;
 }
 
-function RealEarth({ active, visible, lowPower, fixedSize = null, stageScale = null }) {
+function RealEarth({ active, visible, lowPower, fixedSize = null, stageScale = null, onReady }) {
   const globeRef = useRef(null);
   const containerRef = useRef(null);
   const [ready, setReady] = useState(false);
   const [dimensions, setDimensions] = useState({ width: 600, height: 600 });
   const [mobileSize, setMobileSize] = useState(getMobileGlobeSize);
+  const [textures, setTextures] = useState(null); // { earth, bump } once resolved
+  useEffect(() => {
+    let cancelled = false;
+    resolveTextures().then((t) => { if (!cancelled) setTextures(t); });
+    return () => { cancelled = true; };
+  }, []);
+  const handleReady = useCallback(() => {
+    setReady(true);
+    if (onReady) onReady();
+  }, [onReady]);
 
   // rAF-throttled resize (was firing setState on every resize event)
   useEffect(() => {
@@ -392,14 +454,15 @@ function RealEarth({ active, visible, lowPower, fixedSize = null, stageScale = n
       }
     >
       <Suspense fallback={null}>
+        {textures && (
         <Globe
           ref={globeRef}
-          onGlobeReady={() => setReady(true)}
+          onGlobeReady={handleReady}
           width={globeWidth}
           height={globeHeight}
           backgroundColor="rgba(0,0,0,0)"
-          globeImageUrl={EARTH_TEXTURE}
-          bumpImageUrl={lowPower ? undefined : BUMP_TEXTURE}
+          globeImageUrl={textures.earth}
+          bumpImageUrl={lowPower ? undefined : textures.bump}
           showAtmosphere
           atmosphereColor="#4fd8ff"
           atmosphereAltitude={0.22}
@@ -411,20 +474,25 @@ function RealEarth({ active, visible, lowPower, fixedSize = null, stageScale = n
           arcDashLength={0.35}
           arcDashGap={1.6}
           arcDashAnimateTime={arcDash}
+          arcCurveResolution={lowPower ? 24 : 40}
+          arcCircularResolution={4}
           pointsData={CITIES}
           pointLat="lat"
           pointLng="lng"
           pointColor={pointColor}
           pointAltitude={0.012}
           pointRadius={0.35}
+          pointResolution={8}
           ringsData={lowPower ? RINGS_LITE : RINGS_FULL}
           ringLat="lat"
           ringLng="lng"
           ringColor={ringColor}
           ringMaxRadius={3}
+          ringResolution={lowPower ? 24 : 40}
           ringPropagationSpeed={1.6}
           ringRepeatPeriod={lowPower ? 2600 : 1800}
         />
+        )}
       </Suspense>
     </div>
   );
@@ -456,10 +524,28 @@ const stageDescStyle = { fontSize: 24, maxWidth: 770, lineHeight: 1.65 };
 export default function GlobalSection() {
   const sectionRef = useRef(null);
   const isInView = useInView(sectionRef, { once: true, amount: 0.3 });   // entrance animation
-  const nearScreen = useInViewport(sectionRef, { rootMargin: "400px", once: true }); // start loading WebGL
+  const farScreen = useInViewport(sectionRef, { rootMargin: "1500px", once: true }); // prefetch chunk + textures
+  const nearScreen = useInViewport(sectionRef, { rootMargin: "800px", once: true }); // start loading WebGL
   const onScreen = useInViewport(sectionRef, { rootMargin: "0px" });     // run / pause WebGL
   const [lowPower] = useState(detectLowPower);
   const stageScale = useStageScale(sectionRef); // null everywhere except 1400-3839px
+
+  useEffect(() => {
+    if (farScreen) prefetchEarth();
+  }, [farScreen]);
+
+  // Two WebGL contexts compiling at once = long main-thread stall + janky first frames.
+  // The Earth goes first; the Galaxy shader background starts right after it is ready
+  // (or after 2.5s at the latest). The section background is already #0c0b16, so no flash.
+  const [earthReady, setEarthReady] = useState(false);
+  const [galaxyTimeout, setGalaxyTimeout] = useState(false);
+  const handleEarthReady = useCallback(() => setEarthReady(true), []);
+  useEffect(() => {
+    if (!nearScreen) return undefined;
+    const id = setTimeout(() => setGalaxyTimeout(true), 2500);
+    return () => clearTimeout(id);
+  }, [nearScreen]);
+  const galaxyOn = nearScreen && (earthReady || galaxyTimeout);
   const isStage = stageScale !== null;
 
   // Section: in stage mode it is exactly as tall as the scaled 1920x1080 stage
@@ -475,7 +561,7 @@ export default function GlobalSection() {
     >
       {/* Galaxy shader background (mounted only when near the viewport, cheaper settings on weak devices) */}
       <div className="absolute inset-0 z-0 w-full h-full bg-[#0c0b16] overflow-hidden" aria-hidden="true">
-        {nearScreen && (
+        {galaxyOn && (
           <Galaxy
             transparent={false}
             backgroundColor="#0c0b16"
@@ -533,7 +619,7 @@ export default function GlobalSection() {
             }}
           >
             {nearScreen ? (
-              <RealEarth active={isInView} visible={onScreen} lowPower={lowPower} fixedSize={STAGE_GLOBE} stageScale={stageScale} />
+              <RealEarth active={isInView} visible={onScreen} lowPower={lowPower} fixedSize={STAGE_GLOBE} stageScale={stageScale} onReady={handleEarthReady} />
             ) : (
               <div style={{ width: STAGE_GLOBE, height: STAGE_GLOBE }} aria-hidden="true" />
             )}
@@ -597,7 +683,7 @@ export default function GlobalSection() {
             animate={isInView ? "visible" : "hidden"}
             className="relative z-[1] w-full flex items-center justify-center pointer-events-none bg-transparent"
           >
-            {nearScreen ? <RealEarth active={isInView} visible={onScreen} lowPower={lowPower} /> : <div className="w-full min-h-[300px] lg:min-h-[600px]" aria-hidden="true" />}
+            {nearScreen ? <RealEarth active={isInView} visible={onScreen} lowPower={lowPower} onReady={handleEarthReady} /> : <div className="w-full min-h-[300px] lg:min-h-[600px]" aria-hidden="true" />}
           </m.div>
 
           {/* Right: content card */}

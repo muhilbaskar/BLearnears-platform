@@ -100,8 +100,25 @@ export default function HeroSection() {
   const videoRef = useRef(null);
   const inView = useInViewport(sectionRef, { rootMargin: "100px" });
   const heroZoom = useHeroZoom();
-  // Don't even set a video src until the tablet is near the viewport
-  const near = useInViewport(sectionRef, { rootMargin: "300px", once: true });
+  // Don't even set a video src until the tablet is near the viewport...
+  const near = useInViewport(sectionRef, { rootMargin: "200px", once: true });
+  // ...AND the page has finished loading + gone idle. Before, this video started downloading
+  // at the same moment as the big hero video above it, so the two fought for bandwidth
+  // (slower first frame on the hero video, worse LCP/TBT, stutter on slow networks).
+  const [pageIdle, setPageIdle] = useState(false);
+  React.useEffect(() => {
+    let cancelled = false;
+    const start = () => {
+      const idle = window.requestIdleCallback || ((cb) => setTimeout(cb, 600));
+      idle(() => !cancelled && setPageIdle(true), { timeout: 2500 });
+    };
+    if (document.readyState === "complete") start();
+    else window.addEventListener("load", start, { once: true });
+    return () => {
+      cancelled = true;
+      window.removeEventListener("load", start);
+    };
+  }, []);
 
   // Play only while the tablet is on screen
   React.useEffect(() => {
@@ -190,7 +207,7 @@ export default function HeroSection() {
 
             <div className="w-full max-w-[340px] sm:max-w-none h-[520px] sm:w-[420px] sm:h-[600px] lg:w-[480px] lg:h-[680px] bg-[#1a1a1a] rounded-[2.5rem] md:rounded-[3rem] shadow-2xl relative z-10 p-3 md:p-4 flex flex-col">
               <div className="w-full h-full bg-black relative flex items-center justify-center overflow-hidden rounded-[2rem] md:rounded-[2.5rem]">
-                {near && (
+                {near && pageIdle && (
                 <video
                   ref={videoRef}
                   key={activeVideo}
