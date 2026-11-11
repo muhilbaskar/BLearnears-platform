@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>BLearners</title>
+    <meta name="description" content="BLearners TAB and the Blended Education Ecosystem (BEE) connect administrators, teachers, students and parents for personalized, collaborative learning." />
+    <meta name="theme-color" content="#CB02FF" />
+
+    <!-- Favicons -->
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+
+    <!-- Connect early to the font + texture/video origins -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://apidev.cloud" crossorigin />
+    <link rel="dns-prefetch" href="https://unpkg.com" />
+
+    <!-- Fonts loaded ONCE, non-render-blocking (replaces the @import that was inside BeeEcosystemSection).
+         Only the weights actually used: Manrope 400/600, Sora 600/700, JetBrains Mono 700 -->
+    <link
+      rel="preload"
+      as="style"
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Sora:wght@600;700&family=JetBrains+Mono:wght@700&display=swap"
+      onload="this.onload=null;this.rel='stylesheet'"
+    />
+    <noscript>
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Sora:wght@600;700&family=JetBrains+Mono:wght@700&display=swap" />
+    </noscript>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
