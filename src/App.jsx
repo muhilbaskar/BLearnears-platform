@@ -77,22 +77,32 @@ function ScrollToTop() {
 // <Navbar> / <Footer> — those now live in the shared layout below so every
 // route (Privacy, Terms, etc.) gets them too.
 function HomePage() {
-  // Prefetch remaining home-page chunks during idle time, same as before.
+  // Prefetch the remaining home-page chunks during idle time. They are now queued and
+  // fetched ONE PER idle slice instead of all nine in one callback, so parsing/evaluating
+  // them never piles up into a single long main-thread task right after load (TBT / INP).
+  // Same chunks, same order of availability; the Suspense placeholders still cover fast scrolls.
   useEffect(() => {
-    const prefetch = () =>
-      Object.entries(loaders).forEach(([name, load]) => {
-        if (
-          name !== "Global" &&
-          name !== "PrivacyPolicy" &&
-          name !== "TermsConditions"
-        ) {
-          load();
-        }
-      });
-    const idle = window.requestIdleCallback || ((cb) => setTimeout(cb, 1500));
-    const cancel = window.cancelIdleCallback || clearTimeout;
-    const id = idle(prefetch, { timeout: 4000 });
-    return () => cancel(id);
+    const queue = Object.entries(loaders)
+      .filter(([name]) => name !== "Global" && name !== "PrivacyPolicy" && name !== "TermsConditions")
+      .map(([, load]) => load);
+    const hasIdle = typeof window.requestIdleCallback === "function";
+    const schedule = (cb, delay) =>
+      hasIdle ? window.requestIdleCallback(cb, { timeout: 4000 }) : setTimeout(cb, delay);
+    const cancel = hasIdle ? window.cancelIdleCallback : clearTimeout;
+    let id = 0;
+    let stopped = false;
+    const next = () => {
+      if (stopped) return;
+      const load = queue.shift();
+      if (!load) return;
+      load();
+      id = schedule(next, 400);
+    };
+    id = schedule(next, 1500);
+    return () => {
+      stopped = true;
+      cancel(id);
+    };
   }, []);
 
   return (
