@@ -1,5 +1,5 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 
 import Logo from "../../assets/footer/logo.svg";
 import LinkedInIcon from "../../assets/footer/linkedin.svg";
@@ -22,12 +22,20 @@ const QUICK_LINKS = [
   { name: "Register", href: "#register" },
 ];
 
+// Same helper as Navbar: "/#section" from other pages, plain "#section" on home.
+const useAnchor = () => {
+  const { pathname } = useLocation();
+  return (hash) => (pathname === "/" ? hash : `/${hash}`);
+};
+
 const scrollToTop = (e) => {
   e.preventDefault();
   window.scrollTo({ top: 0, behavior: "smooth" });
 };
 
 export default function Footer() {
+  const anchor = useAnchor();
+
   return (
     <footer
       className="cv-auto text-white pt-[50px] md:pt-[70px] pb-6 overflow-hidden"
@@ -100,7 +108,7 @@ export default function Footer() {
             <ul className="space-y-3 sm:space-y-4 text-[15px] sm:text-[16px] text-white/95">
               {QUICK_LINKS.map((l) => (
                 <li key={l.href}>
-                  <a href={l.href} className="hover:text-purple-300 transition-colors">{l.name}</a>
+                  <Link to={anchor(l.href)} className="hover:text-purple-300 transition-colors">{l.name}</Link>
                 </li>
               ))}
             </ul>

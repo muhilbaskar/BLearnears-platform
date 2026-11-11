@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Link, useLocation } from "react-router-dom";
 import { m } from "framer-motion";
 import { ArrowRight, Loader2 } from "lucide-react";
 import SectionHeading from "../ui/SectionHeading";
@@ -85,11 +86,19 @@ const INITIAL_FORM = {
   place: "",
 };
 
+// Same helper as Navbar/Footer. Needed for "#register-form" and "#bee" so the
+// banner's two buttons work from /privacy-policy and /terms-conditions too.
+const useAnchor = () => {
+  const { pathname } = useLocation();
+  return (hash) => (pathname === "/" ? hash : `/${hash}`);
+};
+
 export default function RegisterSection() {
   const [form, setForm] = useState(INITIAL_FORM);
   const [errors, setErrors] = useState({});
   const [status, setStatus] = useState("idle");
   const [serverMsg, setServerMsg] = useState("");
+  const anchor = useAnchor();
 
   const update = (key) => (e) => {
     setForm((f) => ({ ...f, [key]: e.target.value }));
@@ -166,18 +175,18 @@ export default function RegisterSection() {
           </p>
 
           <div className="flex flex-col sm:flex-row justify-center items-center gap-[20px] relative z-10 w-full">
-            <a
-              href="#register-form"
+            <Link
+              to={anchor("#register-form")}
               className="bg-white text-slate-900 text-[15px] font-bold hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 shadow-lg px-8 py-3.5 rounded-full"
             >
               Register Your Interest <ArrowRight size={18} strokeWidth={2.5} aria-hidden="true" />
-            </a>
-            <a
-              href="#bee"
+            </Link>
+            <Link
+              to={anchor("#bee")}
               className="bg-transparent border border-white/30 text-white text-[15px] font-medium hover:bg-white/10 transition-colors flex items-center justify-center px-8 py-3.5 rounded-full"
             >
               Learn More About BEE
-            </a>
+            </Link>
           </div>
         </m.div>
 

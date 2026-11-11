@@ -44,11 +44,31 @@ const Placeholder = ({ id, h = 600 }) => (
 
 // Reset scroll to top whenever the route changes (except when navigating to
 // an in-page anchor like #bee on the home page).
+//
+// When a hash IS present (e.g. arriving from /privacy-policy via "/#features"),
+// we scroll to the target — with a few RAF retries because the section is a lazy
+// chunk and may not be mounted on the first frame. This makes the nav / footer
+// quick links work from the policy pages without changing anything on "/" itself.
 function ScrollToTop() {
   const { pathname, hash } = useLocation();
   useEffect(() => {
-    if (hash) return; // let the browser handle anchor scrolling
-    window.scrollTo(0, 0);
+    if (!hash) {
+      window.scrollTo(0, 0);
+      return undefined;
+    }
+    // Wait a frame + retry a few times while the lazy section mounts.
+    let attempts = 0;
+    let raf = 0;
+    const tryScroll = () => {
+      const el = document.getElementById(hash.slice(1));
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
+      } else if (attempts++ < 20) {
+        raf = requestAnimationFrame(tryScroll);
+      }
+    };
+    raf = requestAnimationFrame(tryScroll);
+    return () => cancelAnimationFrame(raf);
   }, [pathname, hash]);
   return null;
 }
@@ -59,10 +79,6 @@ function ScrollToTop() {
 function HomePage() {
   // Prefetch remaining home-page chunks during idle time, same as before.
   useEffect(() => {
-    // Respect Data Saver / 2G: those users only download a section when they scroll to it.
-    const conn = navigator.connection;
-    if (conn && (conn.saveData || /2g/.test(conn.effectiveType || ""))) return undefined;
-
     const prefetch = () =>
       Object.entries(loaders).forEach(([name, load]) => {
         if (
