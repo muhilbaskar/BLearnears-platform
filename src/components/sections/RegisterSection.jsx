@@ -1,7 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { m } from "framer-motion";
-import { ArrowRight, Loader2 } from "lucide-react";
+import { ArrowRight, Loader2, ChevronDown } from "lucide-react";
 import SectionHeading from "../ui/SectionHeading";
 import { registerInterest } from "../../lib/api";
 
@@ -86,6 +86,8 @@ const INITIAL_FORM = {
   place: "",
 };
 
+const ROLE_OPTIONS = ["Administrator", "Teacher", "Student", "Parent", "Others"];
+
 // Same helper as Navbar/Footer. Needed for "#register-form" and "#bee" so the
 // banner's two buttons work from /privacy-policy and /terms-conditions too.
 const useAnchor = () => {
@@ -98,6 +100,9 @@ export default function RegisterSection() {
   const [errors, setErrors] = useState({});
   const [status, setStatus] = useState("idle");
   const [serverMsg, setServerMsg] = useState("");
+  // When the user picks "Others" in the role dropdown, they type a free-text role here.
+  const [customRole, setCustomRole] = useState("");
+  const roleInputRef = useRef(null);
   const anchor = useAnchor();
 
   const update = (key) => (e) => {
@@ -121,8 +126,11 @@ export default function RegisterSection() {
     if (!form.place.trim()) {
       e.place = "Place is required";
     }
-    if (!["Administrator", "Teacher", "Student", "Parent"].includes(form.role)) {
+    // Role: either one of the presets, or a non-empty custom role when "Others" is chosen.
+    if (!ROLE_OPTIONS.includes(form.role)) {
       e.role = "Select a valid role";
+    } else if (form.role === "Others" && !customRole.trim()) {
+      e.role = "Please specify your role";
     }
     setErrors(e);
     return Object.keys(e).length === 0;
@@ -140,12 +148,13 @@ export default function RegisterSection() {
         email: form.email.trim(),
         phone: form.phone.trim(),
         institution: form.institution.trim(),
-        role: form.role,
+        role: form.role === "Others" ? customRole.trim() : form.role,
         place: form.place.trim(),
       });
       setStatus("success");
       setServerMsg("Registration received! Please check your email.");
       setForm(INITIAL_FORM);
+      setCustomRole("");
     } catch (err) {
       setStatus("error");
       setServerMsg(err.message || "Something went wrong. Please try again.");
@@ -153,6 +162,19 @@ export default function RegisterSection() {
   };
 
   const isLoading = status === "loading";
+  const isOthers = form.role === "Others";
+
+  // Switches the "role" field back from the free-text input to the dropdown,
+  // keeping focus on the select afterwards.
+  const backToSelect = () => {
+    setForm((f) => ({ ...f, role: "Administrator" }));
+    setCustomRole("");
+    setErrors((prev) => (prev.role ? { ...prev, role: undefined } : prev));
+    requestAnimationFrame(() => {
+      const el = document.getElementById("role");
+      if (el) el.focus();
+    });
+  };
 
   return (
     <section id="register" className="cv-auto py-16 md:py-24 bg-white overflow-hidden">
@@ -249,31 +271,64 @@ export default function RegisterSection() {
                 error={errors.institution}
               />
 
+              {/* ROLE: dropdown by default; when "Others" is selected, an editable
+                  text input appears in its place with a placeholder, and the chevron
+                  stays visible on the right so the user can switch back to the list. */}
               <div>
                 <label htmlFor="role" className="block text-[13px] font-medium text-[#1A233A] mb-1.5">
                   I am a *
                 </label>
                 <div className="relative">
-                  <select
-                    id="role"
-                    name="role"
-                    required
-                    value={form.role}
-                    onChange={update("role")}
-                    aria-invalid={!!errors.role}
-                    aria-describedby={errors.role ? "role-error" : undefined}
-                    className={`${INPUT_CLS} appearance-none`}
-                  >
-                    <option>Administrator</option>
-                    <option>Teacher</option>
-                    <option>Student</option>
-                    <option>Parent</option>
-                  </select>
-                  <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none">
-                    <svg className="w-4 h-4 text-[#1A233A]" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </div>
+                  {isOthers ? (
+                    <>
+                      <input
+                        ref={roleInputRef}
+                        id="role"
+                        name="role"
+                        required
+                        type="text"
+                        placeholder="Please specify your role"
+                        autoComplete="organization-title"
+                        value={customRole}
+                        onChange={(e) => {
+                          setCustomRole(e.target.value);
+                          setErrors((prev) => (prev.role ? { ...prev, role: undefined } : prev));
+                        }}
+                        aria-invalid={!!errors.role}
+                        aria-describedby={errors.role ? "role-error" : undefined}
+                        className={`${INPUT_CLS} pr-12`}
+                      />
+                      {/* Chevron doubles as a "back to dropdown" button in input mode. */}
+                      <button
+                        type="button"
+                        onClick={backToSelect}
+                        aria-label="Switch back to role list"
+                        className="absolute inset-y-0 right-3 flex items-center justify-center text-[#1A233A] hover:text-[#8B3DFF] transition-colors"
+                      >
+                        <ChevronDown size={16} />
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <select
+                        id="role"
+                        name="role"
+                        required
+                        value={form.role}
+                        onChange={update("role")}
+                        aria-invalid={!!errors.role}
+                        aria-describedby={errors.role ? "role-error" : undefined}
+                        className={`${INPUT_CLS} appearance-none pr-10`}
+                      >
+                        {ROLE_OPTIONS.map((r) => (
+                          <option key={r} value={r}>{r}</option>
+                        ))}
+                      </select>
+                      <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none">
+                        <ChevronDown size={16} className="text-[#1A233A]" />
+                      </div>
+                    </>
+                  )}
                 </div>
                 {errors.role && (
                   <p id="role-error" className="mt-1 text-[12px] text-red-500">

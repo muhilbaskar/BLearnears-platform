@@ -42,6 +42,54 @@ const Placeholder = ({ id, h = 600 }) => (
   <div id={id} style={{ minHeight: h }} aria-hidden="true" />
 );
 
+// ---------------------------------------------------------------------------
+// Reload handling (module-level, runs once per page load, BEFORE ScrollToTop
+// ever paints anything meaningful).
+//
+//  • Runs at import time — before React mounts, before StrictMode double-invokes.
+//  • Sets history.scrollRestoration = "manual" so the browser STOPS restoring
+//    the previous scroll position on refresh. Without this, the browser scrolls
+//    you back down after our reset, which is why the earlier attempts appeared
+//    to "not work".
+//  • If this was a real reload / navigate AND the URL has a #hash, strip it
+//    with replaceState (no extra history entry, Back/Forward still work).
+//  • Scroll to top across 3 timings so no browser paint wins the race.
+//
+// In-app SPA navigation (clicking Register / Features / BEE links) is NOT
+// affected — by then this block has already run and scrollRestoration stays
+// "manual" only for the reload; SPA scroll is fully controlled by ScrollToTop.
+// ---------------------------------------------------------------------------
+let __reloadHandled = false;
+const handleInitialReload = () => {
+  if (__reloadHandled || typeof window === "undefined") return;
+  __reloadHandled = true;
+  try {
+    // 1) Stop the browser from restoring the previous scroll position.
+    if ("scrollRestoration" in window.history) {
+      window.history.scrollRestoration = "manual";
+    }
+
+    // 2) Only strip the hash on a real page load / reload, not on SPA nav.
+    const nav = performance.getEntriesByType?.("navigation")?.[0];
+    const navType = nav?.type; // "navigate" | "reload" | "back_forward" | "prerender"
+    const isFreshLoad = navType === "navigate" || navType === "reload";
+
+    if (isFreshLoad && window.location.hash) {
+      const cleanUrl = window.location.pathname + window.location.search;
+      window.history.replaceState(null, "", cleanUrl);
+    }
+
+    // 3) Land at the very top — re-assert over a few frames/timers.
+    window.scrollTo(0, 0);
+    requestAnimationFrame(() => window.scrollTo(0, 0));
+    setTimeout(() => window.scrollTo(0, 0), 0);
+    setTimeout(() => window.scrollTo(0, 0), 60);
+  } catch {
+    // performance API unavailable or replaceState blocked: page still works.
+  }
+};
+handleInitialReload();
+
 // Reset scroll to top whenever the route changes (except when navigating to
 // an in-page anchor like #bee on the home page).
 //
@@ -49,6 +97,11 @@ const Placeholder = ({ id, h = 600 }) => (
 // we scroll to the target — with a few RAF retries because the section is a lazy
 // chunk and may not be mounted on the first frame. This makes the nav / footer
 // quick links work from the policy pages without changing anything on "/" itself.
+//
+// On a real reload: handleInitialReload() above has already stripped the hash
+// and disabled browser scroll restoration, so this component's first run just
+// sees a clean "/" and scrolls to top. In-app anchor clicks keep working
+// exactly as before.
 function ScrollToTop() {
   const { pathname, hash } = useLocation();
   useEffect(() => {

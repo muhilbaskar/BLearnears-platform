@@ -20,9 +20,14 @@ const hoverCard = { y: -10, scale: 1.03 };
 // One card component instead of two copy-pasted 60-line blocks.
 // Hover effects (glow, bar, icon spin, title colour) are pure CSS => no per-card
 // framer-motion observers/animations, much cheaper on mobile.
+//
+// Icon hover animation rotates RIGHT (clockwise) on both sides: rotate-12.
+// The lateral ENTRY animation (fromX) still differs per side: the left card
+// slides in from the left, the right card slides in from the right — matching
+// your original file so the section still feels balanced.
 const PillarCard = React.memo(function PillarCard({ pillar, index, side }) {
   const fromX = side === "left" ? -30 : 30;
-  const spin = side === "left" ? "group-hover:rotate-12" : "group-hover:-rotate-12";
+  const spin = "group-hover:rotate-12";
   return (
     <m.div
       initial={{ opacity: 0, x: fromX }}

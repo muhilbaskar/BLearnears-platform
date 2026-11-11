@@ -61,6 +61,7 @@ const FeatureBlock = React.memo(function FeatureBlock({ title, icon: HeaderIcon,
       <div className="absolute top-0 left-0 h-[3px] w-full rounded-full origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-500 ease-out" style={barStyle} />
 
       <div className="flex items-center gap-4 mb-10 relative z-10">
+        {/* Header circle icon — rotates RIGHT on card hover (unchanged) */}
         <div className="w-11 h-11 text-white rounded-full flex items-center justify-center shrink-0 transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110" style={headerCircle}>
           <img src={HeaderIcon} alt="" width="24" height="24" loading="lazy" decoding="async" className="w-6 h-6 object-contain" />
         </div>
@@ -74,6 +75,7 @@ const FeatureBlock = React.memo(function FeatureBlock({ title, icon: HeaderIcon,
             key={feat.title}
             className="group/item flex flex-col gap-2.5 rounded-xl p-2 -m-2 cursor-default transition-[background-color,transform] duration-300 hover:bg-[#FAF5FF] hover:translate-x-1"
           >
+            {/* Feature icon — now rotates RIGHT on hover (was -rotate-[8deg] / left) */}
             <img
               src={categoryIcons[i]}
               alt=""
@@ -81,7 +83,7 @@ const FeatureBlock = React.memo(function FeatureBlock({ title, icon: HeaderIcon,
               height="22"
               loading="lazy"
               decoding="async"
-              className="w-[22px] h-[22px] object-contain mb-1 transition-transform duration-300 group-hover/item:scale-125 group-hover/item:-rotate-[8deg]"
+              className="w-[22px] h-[22px] object-contain mb-1 transition-transform duration-300 group-hover/item:scale-125 group-hover/item:rotate-[8deg]"
             />
             <h4 className="font-semibold text-[15px] text-[#111827]">{feat.title}</h4>
             <p className="text-[13px] text-[#6B7280] leading-[1.4] pr-4">{feat.desc}</p>

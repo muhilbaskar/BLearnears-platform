@@ -106,6 +106,11 @@ const INNER_ITEMS = [
 // One generic ring (was 11 hand-copied blocks). Same geometry & animation.
 // Icon circles, icons and labels are bigger from 1024px up (lg:), and are
 // re-proportioned to the design screenshot from 2200px up (min-[2200px]:).
+//
+// MOBILE-ONLY ADDITION: below 640px the icon circle is slightly smaller
+// (w-8 h-8) and the icon inside it is slightly smaller (w-4 h-4), so that
+// the icons stay visually proportionate inside the now-smaller inner ring.
+// sm: and up are byte-for-byte identical to the original.
 const OrbitRing = React.memo(function OrbitRing({ items, sizeClass, borderClass, duration, ringReverse, gap }) {
   const step = 360 / items.length;
   return (
@@ -130,7 +135,7 @@ const OrbitRing = React.memo(function OrbitRing({ items, sizeClass, borderClass,
                   <div style={{ transform: `rotate(${-angle}deg)` }}>
                     <div className={`flex flex-col items-center ${gap}`}>
                       <div
-                        className="w-10 h-10 md:w-12 md:h-12 lg:w-[86px] lg:h-[86px] min-[2200px]:w-[87px] min-[2200px]:h-[87px] rounded-full flex items-center justify-center"
+                        className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 lg:w-[86px] lg:h-[86px] min-[2200px]:w-[87px] min-[2200px]:h-[87px] rounded-full flex items-center justify-center"
                         style={item.style}
                       >
                         <img
@@ -140,7 +145,7 @@ const OrbitRing = React.memo(function OrbitRing({ items, sizeClass, borderClass,
                           height="24"
                           loading="lazy"
                           decoding="async"
-                          className="w-5 h-5 md:w-6 md:h-6 lg:w-100 lg:h-10 min-[2200px]:w-9 min-[2200px]:h-9 object-contain brightness-0 invert"
+                          className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 lg:w-10 lg:h-10 min-[2200px]:w-9 min-[2200px]:h-9 object-contain brightness-0 invert"
                         />
                       </div>
                       <span
@@ -347,23 +352,27 @@ export default function BeeEcosystemSection() {
               ringReverse={false}
               gap="gap-2 lg:gap-3"
             />
+            {/* INNER RING — mobile-only size shrink (300px -> 260px) increases the gap
+                between the inner and outer rings on small screens. sm: and up unchanged. */}
             <OrbitRing
               items={INNER_ITEMS}
-              sizeClass="w-[300px] h-[300px] md:w-[430px] md:h-[430px] lg:w-[575px] lg:h-[575px] min-[2200px]:w-[568px] min-[2200px]:h-[568px]"
+              sizeClass="w-[260px] h-[260px] sm:w-[300px] sm:h-[300px] md:w-[430px] md:h-[430px] lg:w-[575px] lg:h-[575px] min-[2200px]:w-[568px] min-[2200px]:h-[568px]"
               borderClass="border-white/50"
               duration={45}
               ringReverse
               gap="gap-1 lg:gap-2"
             />
 
-            {/* Centre sun */}
+            {/* Centre sun — mobile-only size shrink (180px -> 150px) increases the
+                gap between the sun and the inner ring on small screens.
+                sm: and up are byte-for-byte identical to the original. */}
             <div
-              className="w-[180px] h-[180px] md:w-[260px] md:h-[260px] lg:w-[320px] lg:h-[320px] min-[2200px]:w-[296px] min-[2200px]:h-[296px] rounded-full flex flex-col items-center justify-center shadow-[0_0_120px_rgba(255,165,0,0.8)] z-10 relative"
+              className="w-[150px] h-[150px] sm:w-[180px] sm:h-[180px] md:w-[260px] md:h-[260px] lg:w-[320px] lg:h-[320px] min-[2200px]:w-[296px] min-[2200px]:h-[296px] rounded-full flex flex-col items-center justify-center shadow-[0_0_120px_rgba(255,165,0,0.8)] z-10 relative"
               style={{ background: "radial-gradient(92.02% 92.02% at 38% 32%, #FFF9D3 0%, #FFCD62 45%, #F28F29 75%, #D75C00 100%)" }}
             >
               <div className="absolute inset-0 rounded-full shadow-[inset_0_0_30px_rgba(255,255,255,0.4)] pointer-events-none" />
-              <span className="text-3xl md:text-[54px] lg:text-[72px] min-[2200px]:text-[56px] font-extrabold text-[#3A1C00] tracking-tight z-20 leading-none">BEE</span>
-              <span className="text-[8px] md:text-[10px] lg:text-[13px] min-[2200px]:text-[14px] font-bold text-[#3A1C00] text-center px-4 leading-snug tracking-widest z-20 mt-2 lg:mt-3">
+              <span className="text-2xl sm:text-3xl md:text-[54px] lg:text-[72px] min-[2200px]:text-[56px] font-extrabold text-[#3A1C00] tracking-tight z-20 leading-none">BEE</span>
+              <span className="text-[7px] sm:text-[8px] md:text-[10px] lg:text-[13px] min-[2200px]:text-[14px] font-bold text-[#3A1C00] text-center px-3 sm:px-4 leading-snug tracking-widest z-20 mt-1.5 sm:mt-2 lg:mt-3">
                 BLENDED EDUCATION<br />ECOSYSTEM
               </span>
             </div>

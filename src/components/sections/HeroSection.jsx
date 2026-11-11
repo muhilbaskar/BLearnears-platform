@@ -1,4 +1,5 @@
 import React, { useRef, useState } from "react";
+import { Link, useLocation } from "react-router-dom";
 import { m } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import useInViewport from "../../hooks/useInViewport";
@@ -15,8 +16,8 @@ import resultLogo from "../../assets/hero/b-result.svg";
 import tabLogoImg from "../../assets/onetab/tab-logo.svg";
 
 // Dummy video sources for testing; replace with local/CDN imports when ready
-const interactiveVideo = "https://storage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4";
-const assignmentsVideo = "https://apidev.cloud/media-service/static/d17c2668-2313-4a29-8f11-fad0f002d087/b71380b9-e18c-443f-8d86-768ab65c7af5/aimode3/27163c39e42a46f49e86b8c3e84023fc.mp4";
+const interactiveVideo = "https://apidev.cloud/media-service/static/608e6cd1-b829-4767-a1a2-5bc1913b27d3/b9c026a2-e04a-4652-9ac1-dc9188bb83d5/aimode33/4b90a4de1bc644eca29dd0bcfb47ab65.mp4";
+const assignmentsVideo = "https://apidev.cloud/media-service/static/608e6cd1-b829-4767-a1a2-5bc1913b27d3/b9c026a2-e04a-4652-9ac1-dc9188bb83d5/aimode33/3d77f243a7d5484d9be799b3b5d9c31c.mp4";
 const classVideo = "https://apidev.cloud/media-service/static/d17c2668-2313-4a29-8f11-fad0f002d087/b71380b9-e18c-443f-8d86-768ab65c7af5/aimode3/45cb0b29dde442f8a58f849b8af1acd6.mp4";
 const storeVideo = "https://apidev.cloud/media-service/static/e75e4664-1cb9-476c-95d1-dd92899c6980/2e033730-247f-43a4-9fa9-012ae6bf4aa8/Blendedflow24/a0de104e469d412ab269874bd657d03d.mp4";
 const resultVideo = "https://apidev.cloud/media-service/static/e75e4664-1cb9-476c-95d1-dd92899c6980/2e033730-247f-43a4-9fa9-012ae6bf4aa8/Blendedflow24/6f3c24c3339145cba0484ce8b5f27f44.mp4";
@@ -59,6 +60,13 @@ function useHeroZoom() {
   return zoom;
 }
 
+// Same helper as Navbar/Footer: "/#section" from other pages, plain "#section" on home.
+// This makes the hero buttons work from /privacy-policy and /terms-conditions too.
+const useAnchor = () => {
+  const { pathname } = useLocation();
+  return (hash) => (pathname === "/" ? hash : `/${hash}`);
+};
+
 const fadeInUp = {
   hidden: { opacity: 0, y: 40 },
   visible: { opacity: 1, y: 0, transition: { duration: 0.6 } },
@@ -100,6 +108,7 @@ export default function HeroSection() {
   const videoRef = useRef(null);
   const inView = useInViewport(sectionRef, { rootMargin: "100px" });
   const heroZoom = useHeroZoom();
+  const anchor = useAnchor();
   // Don't even set a video src until the tablet is near the viewport...
   const near = useInViewport(sectionRef, { rootMargin: "200px", once: true });
   // ...AND the page has finished loading + gone idle. Before, this video started downloading
@@ -177,12 +186,18 @@ export default function HeroSection() {
               />
               <div className="flex-1 min-w-0 lg:flex-none">
                 <m.div variants={fadeInUp} className="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4 mb-4 sm:mb-8">
-                  <button type="button" className="bg-gradient-to-r from-[#D600FF] to-[#6B2CFF] hover:opacity-90 text-white px-4 sm:px-7 py-3 sm:py-3.5 rounded-full font-semibold text-[13px] sm:text-[15px] transition-opacity flex items-center justify-center gap-2 shadow-lg shadow-purple-500/20">
+                  <Link
+                    to={anchor("#features")}
+                    className="bg-gradient-to-r from-[#D600FF] to-[#6B2CFF] hover:opacity-90 text-white px-4 sm:px-7 py-3 sm:py-3.5 rounded-full font-semibold text-[13px] sm:text-[15px] transition-opacity flex items-center justify-center gap-2 shadow-lg shadow-purple-500/20"
+                  >
                     Explore BLearners <ArrowRight size={18} aria-hidden="true" />
-                  </button>
-                  <button type="button" className="bg-white text-[#0B0F19] border border-gray-200 px-4 sm:px-7 py-3 sm:py-3.5 rounded-full font-semibold text-[13px] sm:text-[15px] hover:bg-gray-50 transition-colors shadow-sm">
+                  </Link>
+                  <Link
+                    to={anchor("#bee")}
+                    className="bg-white text-[#0B0F19] border border-gray-200 px-4 sm:px-7 py-3 sm:py-3.5 rounded-full font-semibold text-[13px] sm:text-[15px] hover:bg-gray-50 transition-colors shadow-sm text-center"
+                  >
                     Discover BEE
-                  </button>
+                  </Link>
                 </m.div>
 
                 <m.p variants={fadeInUp} className="text-[13px] sm:text-[15px] text-[#4B5563] font-medium">
