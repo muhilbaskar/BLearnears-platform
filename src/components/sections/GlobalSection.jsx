@@ -263,7 +263,7 @@ const getMobileGlobeSize = () => {
 // Other widths use your original layout, untouched.
 // ---------------------------------------------------------------------------
 const STAGE_W = 1920;
-const STAGE_H = 1080;
+const STAGE_H = 915;
 const STAGE_MIN = 1400;
 const STAGE_MAX = 3839;
 
