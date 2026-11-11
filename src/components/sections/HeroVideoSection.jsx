@@ -8,8 +8,11 @@ const VIDEO_URL =
 // starts fast and never stutters. Leave "" to keep using VIDEO_URL everywhere.
 const VIDEO_URL_SMALL = "";
 
-// Add a real compressed poster (.webp in /public) for the best LCP, e.g. "/hero-poster.webp"
-const POSTER_URL = "";
+// Poster = a compressed still frame of the video at public/hero-poster.webp (see the ffmpeg
+// command in the notes). It paints immediately and becomes the page's LCP image, instead of
+// the LCP waiting for the video's first frame. If the file is missing the poster hides itself
+// (onError) and the section looks/behaves exactly as before.
+const POSTER_URL = `${import.meta.env.BASE_URL || "/"}hero-poster.webp`;
 
 const getConnection = () =>
   typeof navigator === "undefined" ? undefined : navigator.connection || navigator.mozConnection || navigator.webkitConnection;
@@ -40,6 +43,7 @@ export default function HeroVideoSection() {
   const { autoplay, url } = playback;
   const [src, setSrc] = useState(null); // nothing downloads until we decide
   const [blocked, setBlocked] = useState(false); // browser refused autoplay (e.g. iOS Low Power Mode)
+  const [posterOk, setPosterOk] = useState(true); // flips to false if /hero-poster.webp does not exist
 
   // Autoplay devices: start the download AFTER the page has loaded and gone idle,
   // so the video never competes with critical resources.
@@ -109,14 +113,23 @@ export default function HeroVideoSection() {
   return (
     <section className="w-full relative bg-gray-100">
       <div className="w-full overflow-hidden aspect-video relative bg-gradient-to-br from-[#2a1a6e] via-[#4a2bb8] to-[#a300d9]">
-        {POSTER_URL && !isLoaded && (
-          <img src={POSTER_URL} alt="" fetchPriority="high" decoding="async" className="absolute inset-0 w-full h-full object-cover" />
+        {posterOk && (
+          // Stays mounted UNDER the video (the video is `relative` and later in the DOM), so the
+          // video fades in over the poster instead of over the bare gradient.
+          <img
+            src={POSTER_URL}
+            alt=""
+            fetchPriority="high"
+            decoding="async"
+            onError={() => setPosterOk(false)}
+            className="absolute inset-0 w-full h-full object-cover"
+          />
         )}
 
         {src && (
           <video
             ref={videoRef}
-            className={`w-full h-full object-cover transition-opacity duration-500 ${isLoaded ? "opacity-100" : "opacity-0"}`}
+            className={`relative w-full h-full object-cover transition-opacity duration-500 ${isLoaded ? "opacity-100" : "opacity-0"}`}
             autoPlay
             loop
             muted
@@ -124,7 +137,7 @@ export default function HeroVideoSection() {
             disablePictureInPicture
             disableRemotePlayback
             preload="auto"
-            poster={POSTER_URL || undefined}
+            poster={posterOk ? POSTER_URL : undefined}
             src={src}
             aria-label="BLearners introduction video"
             // fade in only once frames are really playing (no frozen first frame while buffering)
