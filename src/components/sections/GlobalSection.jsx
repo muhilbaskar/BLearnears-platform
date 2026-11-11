@@ -255,7 +255,61 @@ const getMobileGlobeSize = () => {
   return Math.round(Math.min(window.innerWidth * 0.95, window.innerHeight * 0.6));
 };
 
-function RealEarth({ active, visible, lowPower }) {
+// ---------------------------------------------------------------------------
+// Laptop L (1440px) + 4K (2560px) "stage" layout
+// For viewport widths STAGE_MIN..STAGE_MAX the section is drawn as a fixed
+// 1920 x 1080 stage whose proportions are measured from the 1024px reference
+// screenshot, then scaled to the REAL section width (scrollbar excluded).
+// Other widths use your original layout, untouched.
+// ---------------------------------------------------------------------------
+const STAGE_W = 1920;
+const STAGE_H = 1080;
+const STAGE_MIN = 1400;
+const STAGE_MAX = 3839;
+
+// Globe: visible sphere ~619px (react-globe.gl sphere = ~0.734 x canvas) centred at x=409
+const STAGE_GLOBE = 840;
+const STAGE_GLOBE_CX = 409;
+// Card: 862 x 525, left edge at x=986, vertically centred
+const STAGE_CARD_LEFT = 986;
+const STAGE_CARD_W = 862;
+
+const inStageRange = () =>
+  typeof window !== "undefined" && window.innerWidth >= STAGE_MIN && window.innerWidth <= STAGE_MAX;
+
+function useStageScale(sectionRef) {
+  const [scale, setScale] = useState(() => (inStageRange() ? window.innerWidth / STAGE_W : null));
+
+  useEffect(() => {
+    let raf = 0;
+    const update = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        if (!inStageRange()) {
+          setScale((prev) => (prev === null ? prev : null));
+          return;
+        }
+        // use the real section width so a vertical scrollbar does not break the fit
+        const w = sectionRef.current ? sectionRef.current.clientWidth : window.innerWidth;
+        const next = w / STAGE_W;
+        setScale((prev) => (prev !== null && Math.abs(prev - next) < 0.0005 ? prev : next));
+      });
+    };
+    update();
+    window.addEventListener("resize", update, { passive: true });
+    const observer = typeof ResizeObserver !== "undefined" && sectionRef.current ? new ResizeObserver(update) : null;
+    if (observer) observer.observe(sectionRef.current);
+    return () => {
+      window.removeEventListener("resize", update);
+      if (observer) observer.disconnect();
+      cancelAnimationFrame(raf);
+    };
+  }, [sectionRef]);
+
+  return scale;
+}
+
+function RealEarth({ active, visible, lowPower, fixedSize = null, stageScale = null }) {
   const globeRef = useRef(null);
   const containerRef = useRef(null);
   const [ready, setReady] = useState(false);
@@ -286,7 +340,9 @@ function RealEarth({ active, visible, lowPower }) {
       renderer.setClearColor(0x000000, 0);
       // Cap pixel ratio: a 3x phone / 2x laptop would otherwise render 4-9x the pixels
       // multiply by the laptop page-scale so we do not render 2560px of pixels on a 1440px screen
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, lowPower ? 1 : 1.5) * getPageScale());
+      // In stage mode the canvas is CSS-scaled by stageScale, so use that instead.
+      const scaleFactor = stageScale ?? getPageScale();
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, lowPower ? 1 : 1.5) * scaleFactor);
     }
 
     const controls = globe.controls();
@@ -299,7 +355,7 @@ function RealEarth({ active, visible, lowPower }) {
     controls.rotateSpeed = 0;
 
     globe.pointOfView({ lat: 20, lng: 20, altitude: 2.3 }, 0);
-  }, [ready, lowPower]);
+  }, [ready, lowPower, stageScale]);
 
   // Rotate only while the entrance has happened; stop the WHOLE render loop when off-screen
   useEffect(() => {
@@ -322,14 +378,18 @@ function RealEarth({ active, visible, lowPower }) {
     return () => observer.disconnect();
   }, []);
 
-  const globeWidth = mobileSize ?? dimensions.width;
-  const globeHeight = mobileSize ?? dimensions.height;
+  const globeWidth = fixedSize ?? mobileSize ?? dimensions.width;
+  const globeHeight = fixedSize ?? mobileSize ?? dimensions.height;
 
   return (
     <div
       ref={containerRef}
-      style={{ minHeight: mobileSize || undefined }}
-      className="global-4k-globe w-full lg:h-full lg:min-h-[600px] xl:min-h-[700px] 2xl:min-h-[800px] fhd:min-h-[900px] qhd:min-h-[1100px] min-[3840px]:min-h-[1400px] flex items-center justify-center relative"
+      style={fixedSize ? { width: fixedSize, height: fixedSize, minHeight: fixedSize, flexShrink: 0 } : { minHeight: mobileSize || undefined }}
+      className={
+        fixedSize
+          ? "flex items-center justify-center relative"
+          : "w-full lg:h-full lg:min-h-[600px] xl:min-h-[700px] 2xl:min-h-[800px] fhd:min-h-[900px] qhd:min-h-[1100px] min-[3840px]:min-h-[1400px] flex items-center justify-center relative"
+      }
     >
       <Suspense fallback={null}>
         <Globe
@@ -380,20 +440,41 @@ const descVariants = { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 
 const galaxyStyle = { position: "absolute", inset: 0, width: "100%", height: "100%" };
 const accentStyle = { background: "linear-gradient(90deg, rgba(241, 196, 94, 0) 0%, rgba(241, 196, 94, 0.75) 50%, rgba(241, 196, 94, 0) 100%)" };
 
+// Fixed pixel values for the 1920 x 1080 stage (Laptop L + 4K), from the 1024px reference
+const stageCardStyle = {
+  width: STAGE_CARD_W,
+  minHeight: 525,
+  gap: 26,
+  padding: "60px 56px",
+  borderRadius: 40,
+};
+const stageAccentStyle = { ...accentStyle, width: 700, height: 4, borderTopLeftRadius: 40 };
+const stageLabelStyle = { fontSize: 15, letterSpacing: 6.5, lineHeight: "20px" };
+const stageTitleStyle = { fontSize: 72, lineHeight: 1.15 };
+const stageDescStyle = { fontSize: 24, maxWidth: 770, lineHeight: 1.65 };
+
 export default function GlobalSection() {
   const sectionRef = useRef(null);
   const isInView = useInView(sectionRef, { once: true, amount: 0.3 });   // entrance animation
   const nearScreen = useInViewport(sectionRef, { rootMargin: "400px", once: true }); // start loading WebGL
   const onScreen = useInViewport(sectionRef, { rootMargin: "0px" });     // run / pause WebGL
   const [lowPower] = useState(detectLowPower);
+  const stageScale = useStageScale(sectionRef); // null everywhere except 1400-3839px
+  const isStage = stageScale !== null;
+
+  // Section: in stage mode it is exactly as tall as the scaled 1920x1080 stage
+  const sectionStyle = isStage
+    ? { height: STAGE_H * stageScale, minHeight: 0, paddingTop: 0, paddingBottom: 0 }
+    : undefined;
 
   return (
     <section
       ref={sectionRef}
-      className="global-4k relative w-full min-h-screen py-12 lg:h-auto lg:py-24 xl:py-32 2xl:py-40 fhd:py-48 qhd:py-64 bg-[#0c0b16] overflow-hidden flex flex-col lg:flex-row items-center justify-center"
+      style={sectionStyle}
+      className="relative w-full min-h-screen py-12 lg:h-auto lg:py-24 xl:py-32 2xl:py-40 fhd:py-48 qhd:py-64 bg-[#0c0b16] overflow-hidden flex flex-col lg:flex-row items-center justify-center"
     >
       {/* Galaxy shader background (mounted only when near the viewport, cheaper settings on weak devices) */}
-      <div className="global-4k-bg absolute inset-0 z-0 w-full h-full bg-[#0c0b16] overflow-hidden" aria-hidden="true">
+      <div className="absolute inset-0 z-0 w-full h-full bg-[#0c0b16] overflow-hidden" aria-hidden="true">
         {nearScreen && (
           <Galaxy
             transparent={false}
@@ -423,53 +504,139 @@ export default function GlobalSection() {
         )}
       </div>
 
-      <div className="max-w-[1920px] w-full mx-auto px-0 lg:px-12 xl:px-20 2xl:px-24 fhd:px-32 qhd:px-48 min-[3840px]:px-64 relative z-10 grid lg:grid-cols-2 gap-0 lg:gap-8 xl:gap-16 2xl:gap-24 items-center">
-        {/* Left: 3D Earth */}
-        <m.div
-          variants={earthVariants}
-          initial="hidden"
-          animate={isInView ? "visible" : "hidden"}
-          className="relative z-[1] w-full flex items-center justify-center pointer-events-none bg-transparent"
+      {isStage ? (
+        /* ===== Laptop L (1440px) + 4K (2560px): fixed 1920x1080 stage, scaled ===== */
+        <div
+          className="z-10"
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            width: STAGE_W,
+            height: STAGE_H,
+            transform: `scale(${stageScale})`,
+            transformOrigin: "top left",
+          }}
         >
-          {nearScreen ? <RealEarth active={isInView} visible={onScreen} lowPower={lowPower} /> : <div className="w-full min-h-[300px] lg:min-h-[600px]" aria-hidden="true" />}
-        </m.div>
+          {/* Left: 3D Earth (sphere centre at x = 409, y = 540) */}
+          <m.div
+            variants={earthVariants}
+            initial="hidden"
+            animate={isInView ? "visible" : "hidden"}
+            className="pointer-events-none bg-transparent"
+            style={{
+              position: "absolute",
+              left: STAGE_GLOBE_CX - STAGE_GLOBE / 2,
+              top: STAGE_H / 2 - STAGE_GLOBE / 2,
+              width: STAGE_GLOBE,
+              height: STAGE_GLOBE,
+            }}
+          >
+            {nearScreen ? (
+              <RealEarth active={isInView} visible={onScreen} lowPower={lowPower} fixedSize={STAGE_GLOBE} stageScale={stageScale} />
+            ) : (
+              <div style={{ width: STAGE_GLOBE, height: STAGE_GLOBE }} aria-hidden="true" />
+            )}
+          </m.div>
 
-        {/* Right: content card */}
-        <m.div
-          variants={cardVariants}
-          initial="hidden"
-          animate={isInView ? "visible" : "hidden"}
-          className="relative z-10 w-full flex justify-center lg:justify-end px-4 md:px-16 lg:px-0"
-        >
-          <div className="glass-card relative flex flex-col justify-center items-center text-center overflow-hidden w-full max-w-[720px] xl:max-w-[760px] 2xl:max-w-[820px] fhd:max-w-[900px] qhd:max-w-[1100px] min-[3840px]:max-w-[1500px] min-h-[352px] xl:min-h-[380px] 2xl:min-h-[420px] fhd:min-h-[480px] qhd:min-h-[600px] min-[3840px]:min-h-[800px] gap-[8.7px] lg:gap-[12px] xl:gap-[14px] 2xl:gap-[18px] fhd:gap-[24px] qhd:gap-[32px] min-[3840px]:gap-[48px] pt-[27px] lg:pt-[30px] xl:pt-[40px] 2xl:pt-[50px] fhd:pt-[60px] qhd:pt-[80px] min-[3840px]:pt-[110px] px-[25.4px] lg:px-[25px] xl:px-[32px] 2xl:px-[40px] fhd:px-[50px] qhd:px-[70px] min-[3840px]:px-[100px] pb-[25.4px] lg:pb-[30px] xl:pb-[40px] 2xl:pb-[50px] fhd:pb-[60px] qhd:pb-[80px] min-[3840px]:pb-[110px] rounded-[20px] xl:rounded-[24px] 2xl:rounded-[28px] fhd:rounded-[32px] qhd:rounded-[42px] min-[3840px]:rounded-[56px] [container-type:inline-size]">
+          {/* Right: content card */}
+          <m.div
+            variants={cardVariants}
+            initial="hidden"
+            animate={isInView ? "visible" : "hidden"}
+            className="z-10"
+            style={{
+              position: "absolute",
+              left: STAGE_CARD_LEFT,
+              top: 0,
+              width: STAGE_CARD_W,
+              height: STAGE_H,
+              display: "flex",
+              alignItems: "center",
+            }}
+          >
             <div
-              className="absolute top-0 left-0 w-[400px] xl:w-[460px] 2xl:w-[520px] fhd:w-[600px] qhd:w-[740px] min-[3840px]:w-[1000px] h-[2px] xl:h-[2.5px] 2xl:h-[3px] fhd:h-[3.5px] qhd:h-[4.5px] min-[3840px]:h-[6px] rounded-tl-[20px] xl:rounded-tl-[24px] 2xl:rounded-tl-[28px] fhd:rounded-tl-[32px] qhd:rounded-tl-[42px] min-[3840px]:rounded-tl-[56px]"
-              style={accentStyle}
-            />
-
-            <m.p
-              variants={labelVariants}
-              className="font-['JetBrains_Mono'] font-bold whitespace-nowrap [--f:12px] [--ls:3px] xl:[--f:13px] 2xl:[--f:14px] fhd:[--f:16px] fhd:[--ls:3.5px] qhd:[--f:19px] qhd:[--ls:4.5px] min-[3840px]:[--f:24px] min-[3840px]:[--ls:6px] text-[length:min(var(--f),calc((3.3cqw-min(var(--ls),0.9cqw))/0.62))] tracking-[min(var(--ls),0.9cqw)] leading-[16px] xl:leading-[17px] 2xl:leading-[18px] fhd:leading-[20px] qhd:leading-[24px] min-[3840px]:leading-[30px] text-[#4AD496] uppercase mb-2 xl:mb-2.5 2xl:mb-3 fhd:mb-3.5 qhd:mb-4.5 min-[3840px]:mb-6"
+              className="glass-card relative flex flex-col justify-center items-center text-center overflow-hidden"
+              style={stageCardStyle}
             >
-              Empowering Education Worldwide
-            </m.p>
+              <div className="absolute top-0 left-0" style={stageAccentStyle} />
 
-            <m.h2
-              variants={headingVariants}
-              className="whitespace-nowrap [--f:30px] sm:[--f:36px] md:[--f:48px] lg:[--f:56px] xl:[--f:60px] 2xl:[--f:64px] fhd:[--f:80px] qhd:[--f:100px] min-[3840px]:[--f:140px] text-[length:min(var(--f),9.9cqw)] font-bold text-white tracking-tight leading-tight"
-            >
-              Connecting Globally
-            </m.h2>
+              <m.p
+                variants={labelVariants}
+                className="font-['JetBrains_Mono'] font-bold whitespace-nowrap text-[#4AD496] uppercase"
+                style={stageLabelStyle}
+              >
+                Empowering Education Worldwide
+              </m.p>
 
-            <m.p
-              variants={descVariants}
-              className="text-white/90 text-[16px] md:text-[18px] xl:text-[19px] 2xl:text-[20px] fhd:text-[24px] qhd:text-[30px] min-[3840px]:text-[42px] leading-relaxed max-w-[520px] xl:max-w-[560px] 2xl:max-w-[600px] fhd:max-w-[720px] qhd:max-w-[920px] min-[3840px]:max-w-[1300px] mx-auto mt-2 xl:mt-2.5 2xl:mt-3 fhd:mt-4 qhd:mt-5 min-[3840px]:mt-7"
-            >
-              Get connected to any classroom. Learn beyond boundaries. Teach anyone anywhere - Experience BLearners TAB for Seamless Education.
-            </m.p>
-          </div>
-        </m.div>
-      </div>
+              <m.h2
+                variants={headingVariants}
+                className="whitespace-nowrap font-bold text-white tracking-tight"
+                style={stageTitleStyle}
+              >
+                Connecting Globally
+              </m.h2>
+
+              <m.p
+                variants={descVariants}
+                className="text-white/90 mx-auto"
+                style={stageDescStyle}
+              >
+                Get connected to any classroom. Learn beyond boundaries. Teach anyone anywhere - Experience BLearners TAB for Seamless Education.
+              </m.p>
+            </div>
+          </m.div>
+        </div>
+      ) : (
+        /* ===== All other screens: your original layout, unchanged ===== */
+        <div className="max-w-[1920px] w-full mx-auto px-0 lg:px-12 xl:px-20 2xl:px-24 fhd:px-32 qhd:px-48 min-[3840px]:px-64 relative z-10 grid lg:grid-cols-2 gap-0 lg:gap-8 xl:gap-16 2xl:gap-24 items-center">
+          {/* Left: 3D Earth */}
+          <m.div
+            variants={earthVariants}
+            initial="hidden"
+            animate={isInView ? "visible" : "hidden"}
+            className="relative z-[1] w-full flex items-center justify-center pointer-events-none bg-transparent"
+          >
+            {nearScreen ? <RealEarth active={isInView} visible={onScreen} lowPower={lowPower} /> : <div className="w-full min-h-[300px] lg:min-h-[600px]" aria-hidden="true" />}
+          </m.div>
+
+          {/* Right: content card */}
+          <m.div
+            variants={cardVariants}
+            initial="hidden"
+            animate={isInView ? "visible" : "hidden"}
+            className="relative z-10 w-full flex justify-center lg:justify-end px-4 md:px-16 lg:px-0"
+          >
+            <div className="glass-card relative flex flex-col justify-center items-center text-center overflow-hidden w-full max-w-[720px] xl:max-w-[760px] 2xl:max-w-[820px] fhd:max-w-[900px] qhd:max-w-[1100px] min-[3840px]:max-w-[1500px] min-h-[352px] xl:min-h-[380px] 2xl:min-h-[420px] fhd:min-h-[480px] qhd:min-h-[600px] min-[3840px]:min-h-[800px] gap-[8.7px] lg:gap-[12px] xl:gap-[14px] 2xl:gap-[18px] fhd:gap-[24px] qhd:gap-[32px] min-[3840px]:gap-[48px] pt-[27px] lg:pt-[30px] xl:pt-[40px] 2xl:pt-[50px] fhd:pt-[60px] qhd:pt-[80px] min-[3840px]:pt-[110px] px-[25.4px] lg:px-[25px] xl:px-[32px] 2xl:px-[40px] fhd:px-[50px] qhd:px-[70px] min-[3840px]:px-[100px] pb-[25.4px] lg:pb-[30px] xl:pb-[40px] 2xl:pb-[50px] fhd:pb-[60px] qhd:pb-[80px] min-[3840px]:pb-[110px] rounded-[20px] xl:rounded-[24px] 2xl:rounded-[28px] fhd:rounded-[32px] qhd:rounded-[42px] min-[3840px]:rounded-[56px] [container-type:inline-size]">
+              <div
+                className="absolute top-0 left-0 w-[400px] xl:w-[460px] 2xl:w-[520px] fhd:w-[600px] qhd:w-[740px] min-[3840px]:w-[1000px] h-[2px] xl:h-[2.5px] 2xl:h-[3px] fhd:h-[3.5px] qhd:h-[4.5px] min-[3840px]:h-[6px] rounded-tl-[20px] xl:rounded-tl-[24px] 2xl:rounded-tl-[28px] fhd:rounded-tl-[32px] qhd:rounded-tl-[42px] min-[3840px]:rounded-tl-[56px]"
+                style={accentStyle}
+              />
+
+              <m.p
+                variants={labelVariants}
+                className="font-['JetBrains_Mono'] font-bold whitespace-nowrap [--f:12px] [--ls:3px] xl:[--f:13px] 2xl:[--f:14px] fhd:[--f:16px] fhd:[--ls:3.5px] qhd:[--f:19px] qhd:[--ls:4.5px] min-[3840px]:[--f:24px] min-[3840px]:[--ls:6px] text-[length:min(var(--f),calc((3.3cqw-min(var(--ls),0.9cqw))/0.62))] tracking-[min(var(--ls),0.9cqw)] leading-[16px] xl:leading-[17px] 2xl:leading-[18px] fhd:leading-[20px] qhd:leading-[24px] min-[3840px]:leading-[30px] text-[#4AD496] uppercase mb-2 xl:mb-2.5 2xl:mb-3 fhd:mb-3.5 qhd:mb-4.5 min-[3840px]:mb-6"
+              >
+                Empowering Education Worldwide
+              </m.p>
+
+              <m.h2
+                variants={headingVariants}
+                className="whitespace-nowrap [--f:30px] sm:[--f:36px] md:[--f:48px] lg:[--f:56px] xl:[--f:60px] 2xl:[--f:64px] fhd:[--f:80px] qhd:[--f:100px] min-[3840px]:[--f:140px] text-[length:min(var(--f),9.9cqw)] font-bold text-white tracking-tight leading-tight"
+              >
+                Connecting Globally
+              </m.h2>
+
+              <m.p
+                variants={descVariants}
+                className="text-white/90 text-[16px] md:text-[18px] xl:text-[19px] 2xl:text-[20px] fhd:text-[24px] qhd:text-[30px] min-[3840px]:text-[42px] leading-relaxed max-w-[520px] xl:max-w-[560px] 2xl:max-w-[600px] fhd:max-w-[720px] qhd:max-w-[920px] min-[3840px]:max-w-[1300px] mx-auto mt-2 xl:mt-2.5 2xl:mt-3 fhd:mt-4 qhd:mt-5 min-[3840px]:mt-7"
+              >
+                Get connected to any classroom. Learn beyond boundaries. Teach anyone anywhere - Experience BLearners TAB for Seamless Education.
+              </m.p>
+            </div>
+          </m.div>
+        </div>
+      )}
     </section>
   );
 }
