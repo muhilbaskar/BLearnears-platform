@@ -44,16 +44,22 @@ function shadows(count, seed, make) {
   return out.join(",");
 }
 
-const GLOW_COLORS = ["255,255,255", "160,200,255", "200,150,255", "255,220,150"];
+// Blue-weighted glow palette so the stars read as a cool night sky
+// against the brighter blue background instead of the old near-black.
+const GLOW_COLORS = ["200,220,255", "160,200,255", "200,180,255", "180,220,255"];
 
 const STAR_LAYERS = {
-  far: shadows(80, 11, () => "0 0 rgba(255,255,255,.75)"),
-  near: shadows(34, 22, () => "0 0 6px 1px rgba(180,200,255,.9)"),
+  // Far stars: soft cool-white, still visible on the brighter navy
+  far: shadows(80, 11, () => "0 0 rgba(210,225,255,.8)"),
+  // Near stars: pale blue with a soft blue halo
+  near: shadows(34, 22, () => "0 0 6px 1px rgba(170,200,255,.9)"),
+  // Glow stars: blue-tinted halos
   glow: shadows(28, 33, (r) => {
     const c = GLOW_COLORS[Math.floor(r() * GLOW_COLORS.length)];
     return `0 0 10px 3px rgba(${c},.85)`;
   }),
-  float: shadows(22, 44, () => "0 0 4px 1px rgba(255,255,255,.8)"),
+  // Floating stars: light blue-white
+  float: shadows(22, 44, () => "0 0 4px 1px rgba(200,220,255,.85)"),
 };
 
 const SHOOTING = [
@@ -298,16 +304,30 @@ export default function BeeEcosystemSection() {
       ref={ref}
       id="bee"
       className={`cv-auto py-16 md:py-24 min-[2200px]:py-[1.35vw] text-white relative overflow-hidden flex items-center lg:min-h-[900px] min-[1440px]:min-h-[1050px] min-[2200px]:min-h-[49.86vw] ${inView ? "" : "is-paused"}`}
-      style={{ backgroundColor: "#0a0a1a", zoom: beeZoom === 1 ? undefined : beeZoom }}
+      style={{ backgroundColor: "#0d1b3a", zoom: beeZoom === 1 ? undefined : beeZoom }}
     >
       {/* Galaxy layers */}
       <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden" aria-hidden="true">
-        {/* Base nebula: STATIC, so its colour filter is rasterised once, not per frame */}
-        <div className="absolute" style={{ ...nebulaBase, filter: "brightness(0.55) contrast(1.5) saturate(1.4)", transform: "scale(1.1)" }} />
+        {/* Base nebula: STATIC, so its colour filter is rasterised once, not per frame.
+            Brighter + blue-shifted so the galaxy texture reads as a cool blue nebula
+            instead of a dark near-black one. */}
+        <div
+          className="absolute"
+          style={{
+            ...nebulaBase,
+            filter: "brightness(0.85) contrast(1.25) saturate(1.6) hue-rotate(200deg)",
+            transform: "scale(1.1)",
+            opacity: 0.85,
+          }}
+        />
 
-        {/* Mirrored nebula: transform-only animation, hidden on small screens */}
+        {/* Mirrored nebula: transform-only animation, hidden on small screens.
+            Slightly stronger opacity so the blue glow is more present. */}
         <div className="absolute inset-0 hidden md:block" style={{ transform: "scaleX(-1)" }}>
-          <div className="absolute nebula-b" style={{ ...nebulaBase, opacity: 0.45 }} />
+          <div
+            className="absolute nebula-b"
+            style={{ ...nebulaBase, opacity: 0.55, filter: "brightness(0.9) contrast(1.2) saturate(1.5) hue-rotate(200deg)" }}
+          />
         </div>
 
         <div className="star-layer star-far" style={{ boxShadow: STAR_LAYERS.far }} />
@@ -320,7 +340,9 @@ export default function BeeEcosystemSection() {
         ))}
       </div>
 
-      <div className="absolute inset-0 bg-gradient-to-b from-[#0a0a1a]/60 via-[#0a0a1a]/40 to-[#0a0a1a]/70 pointer-events-none z-10" />
+      {/* Blue-tinted vignette (was near-black). Keeps the same top/bottom darkening
+          so the orbit + card still pop, but in blue instead of black. */}
+      <div className="absolute inset-0 bg-gradient-to-b from-[#0d1b3a]/55 via-[#122a5c]/35 to-[#1a3a7a]/60 pointer-events-none z-10" />
 
       {/* Orbit column + card column.
           1024px -> 1440px: fitted columns (orbit measures its column and scales to fit).

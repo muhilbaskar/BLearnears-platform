@@ -16,7 +16,7 @@ import resultLogo from "../../assets/hero/b-result.svg";
 import tabLogoImg from "../../assets/onetab/tab-logo.svg";
 
 // Dummy video sources for testing; replace with local/CDN imports when ready
-const interactiveVideo = "https://apidev.cloud/media-service/static/608e6cd1-b829-4767-a1a2-5bc1913b27d3/b9c026a2-e04a-4652-9ac1-dc9188bb83d5/aimode33/4b90a4de1bc644eca29dd0bcfb47ab65.mp4";
+const interactiveVideo = "https://apidev.cloud/media-service/static/2e15506b-6af4-4436-a1d4-f816ca3247f9/3dcacbaf-bf8e-4d3b-a8f8-df529b6984d1/Images12/3144662191a84b0e93412f0e009faf80.mp4";
 const assignmentsVideo = "https://apidev.cloud/media-service/static/608e6cd1-b829-4767-a1a2-5bc1913b27d3/b9c026a2-e04a-4652-9ac1-dc9188bb83d5/aimode33/3d77f243a7d5484d9be799b3b5d9c31c.mp4";
 const classVideo = "https://apidev.cloud/media-service/static/d17c2668-2313-4a29-8f11-fad0f002d087/b71380b9-e18c-443f-8d86-768ab65c7af5/aimode3/45cb0b29dde442f8a58f849b8af1acd6.mp4";
 const storeVideo = "https://apidev.cloud/media-service/static/e75e4664-1cb9-476c-95d1-dd92899c6980/2e033730-247f-43a4-9fa9-012ae6bf4aa8/Blendedflow24/a0de104e469d412ab269874bd657d03d.mp4";
