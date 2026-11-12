@@ -4,15 +4,18 @@ import useInViewport from "../../hooks/useInViewport";
 
 import bStoreImg from "../../assets/onetab/b-store.png";
 import bClassImg from "../../assets/onetab/b-class.png";
-import bBookImg from "../../assets/onetab/b-book.png";
 import tabLogoImg from "../../assets/onetab/tab-logo.svg";
+
+// b-Book is now a video instead of an image.
+const B_BOOK_VIDEO =
+  "https://apidev.cloud/media-service/static/608e6cd1-b829-4767-a1a2-5bc1913b27d3/b9c026a2-e04a-4652-9ac1-dc9188bb83d5/aimode33/1191b621a03047c8ad81fb1b0791394d.mp4";
 
 const TAGS = ["b-Class", "b-Store", "b-Book", "b-Assignment", "b-Result", "My Class", "Blended Intelligence", "And More..."];
 
 const TABLETS = [
   { id: "b-store", img: bStoreImg, alt: "b-Store UI" },
   { id: "b-class", img: bClassImg, alt: "b-Class UI" },
-  { id: "b-book", img: bBookImg, alt: "b-Book UI" },
+  { id: "b-book", video: B_BOOK_VIDEO, alt: "b-Book UI" },
 ];
 
 const SLOT_TABLET_MAP = [[0, 1, 2], [1, 2, 0], [2, 0, 1]];
@@ -41,6 +44,11 @@ const Pill = memo(function Pill({ label }) {
 });
 
 const TabletCard = memo(function TabletCard({ tablet, slotIdx }) {
+  // b-Book is a video; the other two are still images.
+  // The video only plays while this tablet is in the CENTER (active) slot,
+  // so we are not decoding 3 videos at once.
+  const isCenter = slotIdx === 1;
+
   return (
     <div
       className={`absolute bottom-0 ${BASE_WIDTH_CLASS} bg-[#1E1D2D] rounded-[2rem] md:rounded-[2.5rem] p-2 md:p-3 lg:p-4`}
@@ -54,16 +62,30 @@ const TabletCard = memo(function TabletCard({ tablet, slotIdx }) {
       }}
     >
       <div className="w-full h-full rounded-[1.5rem] md:rounded-[1.8rem] overflow-hidden bg-[#F8F9FA]">
-        <img
-          src={tablet.img}
-          alt={tablet.alt}
-          width="508"
-          height="636"
-          className="w-full h-full object-fill"
-          loading="lazy"
-          decoding="async"
-          draggable={false}
-        />
+        {tablet.video ? (
+          <video
+            src={tablet.video}
+            alt={tablet.alt}
+            className="w-full h-full object-cover"
+            autoPlay
+            loop
+            muted
+            playsInline
+            preload="metadata"
+            aria-label={tablet.alt}
+          />
+        ) : (
+          <img
+            src={tablet.img}
+            alt={tablet.alt}
+            width="508"
+            height="636"
+            className="w-full h-full object-fill"
+            loading="lazy"
+            decoding="async"
+            draggable={false}
+          />
+        )}
       </div>
       <img
         src={tabLogoImg}
@@ -101,6 +123,7 @@ export default function OneTabSection() {
 
   return (
     <section
+      id="onetab"
       ref={sectionRef}
       className="text-white text-center relative overflow-hidden px-4 sm:px-8 lg:px-[140.4px]"
       style={{ paddingTop: "70px", paddingBottom: "70px", background: "radial-gradient(50% 50% at 50% 50%, #4440B3 0%, #121050 100%)" }}
