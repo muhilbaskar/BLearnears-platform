@@ -7,6 +7,8 @@ import Navbar from "./components/layout/Navbar.jsx";
 import StatusBar from "./components/layout/StatusBar.jsx";
 import HeroVideoSection from "./components/sections/HeroVideoSection.jsx";
 import HeroSection from "./components/sections/HeroSection.jsx";
+// NEW: poster popup shown once on initial load
+import PosterModal from "./components/ui/PosterModal.jsx";
 
 // Below-the-fold: split into separate chunks (smaller initial JS => better LCP/TBT)
 const loaders = {
@@ -170,35 +172,40 @@ function HomePage() {
   }, []);
 
   return (
-    <main>
-      <HeroVideoSection />
-      <HeroSection />
+    <>
+      {/* Poster popup: opens once on initial load; closing it reveals the home page below */}
+      <PosterModal />
 
-      <Suspense fallback={<Placeholder h={800} />}>
-        <OneTabSection />
-      </Suspense>
-      <Suspense fallback={<Placeholder h={900} />}>
-        <PillarsSection />
-      </Suspense>
-      <Suspense fallback={<Placeholder id="bee" h={900} />}>
-        <BeeEcosystemSection />
-      </Suspense>
-      <Suspense fallback={<Placeholder id="features" h={1200} />}>
-        <FeaturesSection />
-      </Suspense>
-      <Suspense fallback={<Placeholder h={800} />}>
-        <GlobalSection />
-      </Suspense>
-      <Suspense fallback={<Placeholder id="benefits" h={900} />}>
-        <BenefitsSection />
-      </Suspense>
-      <Suspense fallback={<Placeholder h={500} />}>
-        <BoardsSection />
-      </Suspense>
-      <Suspense fallback={<Placeholder id="register" h={1000} />}>
-        <RegisterSection />
-      </Suspense>
-    </main>
+      <main>
+        <HeroVideoSection />
+        <HeroSection />
+
+        <Suspense fallback={<Placeholder h={800} />}>
+          <OneTabSection />
+        </Suspense>
+        <Suspense fallback={<Placeholder h={900} />}>
+          <PillarsSection />
+        </Suspense>
+        <Suspense fallback={<Placeholder id="bee" h={900} />}>
+          <BeeEcosystemSection />
+        </Suspense>
+        <Suspense fallback={<Placeholder id="features" h={1200} />}>
+          <FeaturesSection />
+        </Suspense>
+        <Suspense fallback={<Placeholder h={800} />}>
+          <GlobalSection />
+        </Suspense>
+        <Suspense fallback={<Placeholder id="benefits" h={900} />}>
+          <BenefitsSection />
+        </Suspense>
+        <Suspense fallback={<Placeholder h={500} />}>
+          <BoardsSection />
+        </Suspense>
+        <Suspense fallback={<Placeholder id="register" h={1000} />}>
+          <RegisterSection />
+        </Suspense>
+      </main>
+    </>
   );
 }
 
