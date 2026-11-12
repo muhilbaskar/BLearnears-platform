@@ -143,12 +143,17 @@ export default function RegisterSection() {
 
     setStatus("loading");
     try {
+      // Send `role: "Others"` + `customRole: <typed text>` when the user picks
+      // "Others" (backend expects this shape). For preset roles we only send
+      // `role`. Existing preset behaviour is unchanged.
+      const isOthers = form.role === "Others";
       await registerInterest({
         fullName: form.fullName.trim(),
         email: form.email.trim(),
         phone: form.phone.trim(),
         institution: form.institution.trim(),
-        role: form.role === "Others" ? customRole.trim() : form.role,
+        role: isOthers ? "Others" : form.role,
+        customRole: isOthers ? customRole.trim() : undefined,
         place: form.place.trim(),
       });
       setStatus("success");
