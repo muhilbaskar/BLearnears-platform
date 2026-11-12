@@ -303,10 +303,10 @@ export default function PrivacyPolicy() {
             <p>
               Email:{" "}
               <a
-                href="mailto:help@blendedpedagogy.com"
+                href="mailto:contact@blearners.com"
                 className="text-[#4A54ED] hover:underline"
               >
-                help@blendedpedagogy.com
+                contact@blearners.com
               </a>
             </p>
           </section>

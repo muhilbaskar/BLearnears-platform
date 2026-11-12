@@ -63,9 +63,10 @@ svg {
   will-change: transform;
 }
 
+/* Marquee now runs RIGHT -> LEFT (content moves toward the left edge) */
 @keyframes marquee-ltr {
-  from { transform: translate3d(-50%, 0, 0); }
-  to   { transform: translate3d(0, 0, 0); }
+  from { transform: translate3d(0, 0, 0); }
+  to   { transform: translate3d(-50%, 0, 0); }
 }
 .marquee-track {
   animation: marquee-ltr 14s linear infinite;

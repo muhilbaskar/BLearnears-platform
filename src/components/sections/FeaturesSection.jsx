@@ -48,13 +48,13 @@ const containerVariants = { hidden: { opacity: 0 }, visible: { opacity: 1, trans
 const cardVariants = { hidden: { opacity: 0, y: 40 }, visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } } };
 const hoverCard = { y: -10, scale: 1.02 };
 
-const FeatureBlock = React.memo(function FeatureBlock({ title, icon: HeaderIcon, items, categoryIcons, cardHeight = "466.4px" }) {
+const FeatureBlock = React.memo(function FeatureBlock({ title, icon: HeaderIcon, items, categoryIcons }) {
   return (
     <m.div
       variants={cardVariants}
       whileHover={hoverCard}
-      className="group relative bg-white flex flex-col overflow-hidden border border-[#F3F4F6] hover:border-[#E9D5FF] shadow-[0px_8px_24px_rgba(0,0,0,0.04)] hover:shadow-[0px_20px_40px_rgba(141,0,255,0.15)] transition-[box-shadow,border-color] duration-300"
-      style={{ width: "100%", maxWidth: "755.5px", minHeight: cardHeight, padding: "clamp(20px, 5vw, 31.8px)", borderRadius: "32px" }}
+      className="group relative bg-white flex flex-col overflow-hidden border border-[#F3F4F6] hover:border-[#E9D5FF] shadow-[0px_8px_24px_rgba(0,0,0,0.04)] hover:shadow-[0px_20px_40px_rgba(141,0,255,0.15)] transition-[box-shadow,border-color] duration-300 h-full"
+      style={{ width: "100%", maxWidth: "755.5px", padding: "clamp(20px, 5vw, 31.8px)", borderRadius: "32px" }}
     >
       <div className="absolute inset-0 rounded-[32px] opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-500" style={glowStyle} />
       {/* scaleX instead of animating width: compositor-only, no layout */}
@@ -105,11 +105,11 @@ export default function FeaturesSection() {
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, margin: "-100px" }}
-          className="grid lg:grid-cols-2 mx-auto mt-16"
+          className="grid lg:grid-cols-2 mx-auto mt-16 items-stretch"
           style={{ gap: "24px", maxWidth: "1535px" }}
         >
-          <FeatureBlock title="Learning" icon={icons.headers.learning} items={featuresData.learning} categoryIcons={icons.learning} cardHeight="500px" />
-          <FeatureBlock title="BI Assistance" icon={icons.headers.ai} items={featuresData.ai} categoryIcons={icons.ai} cardHeight="500px" />
+          <FeatureBlock title="Learning" icon={icons.headers.learning} items={featuresData.learning} categoryIcons={icons.learning} />
+          <FeatureBlock title="BI Assistance" icon={icons.headers.ai} items={featuresData.ai} categoryIcons={icons.ai} />
           <FeatureBlock title="Collaboration" icon={icons.headers.collaboration} items={featuresData.collaboration} categoryIcons={icons.collaboration} />
           <FeatureBlock title="Academic" icon={icons.headers.academic} items={featuresData.academic} categoryIcons={icons.academic} />
         </m.div>

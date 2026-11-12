@@ -16,7 +16,7 @@ const SOCIALS = [
 ];
 
 const QUICK_LINKS = [
-  { name: "Features of B Learners", href: "#features" },
+  { name: "Features of BLearners", href: "#features" },
   { name: "BLearners Tab", href: "#onetab" },
   { name: "Benefits", href: "#benefits" },
   { name: "Register", href: "#register" },

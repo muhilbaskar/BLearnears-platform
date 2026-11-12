@@ -53,5 +53,5 @@ export const benefits = [
 export const categories = {
   boards: ["State Board", "CBSE Board", "ICSE Board", "IGCSE Board", "Grade 8", "Grade 9", "Grade 10", "Grade 11", "Grade 12"],
   courses: ["RRB", "GATE", "SSC", "NEET", "UPSC", "TNPSC", "IBPS PO", "CUET UG", "TANCET", "AILET", "JEE"],
-  degrees: ["Polytechnic", "B.E.", "B.Sc.", "B.C.A.", "B.Tech.", "B.Sc. (Tech.)", "M.E.", "M.Tech.", "M.C.A.", "M.Sc. (Tech.)"],
+  degrees: ["Polytechnic", "B.E.", "B.Sc.", "BCA.", "B.Tech.", "B.Sc. (Tech.)", "M.E.", "M.Tech.", "MCA.", "M.Sc. (Tech.)"],
 };

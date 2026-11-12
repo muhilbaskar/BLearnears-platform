@@ -37,7 +37,7 @@ export default function BoardsSection() {
     <section ref={ref} className={`cv-auto pt-16 md:pt-24 pb-[30px] bg-[#F4F5F7] overflow-hidden ${inView ? "" : "is-paused"}`}>
       <div className="max-w-[1920px] mx-auto w-full px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-10 md:mb-16">
-          <h2 className="font-['Sora'] text-[30px] sm:text-[42px] md:text-[52px] font-bold tracking-tight text-[#1A233A]">Any board . Any degree.</h2>
+          <h2 className="font-['Sora'] text-[30px] sm:text-[42px] md:text-[52px] font-bold tracking-tight text-[#1A233A]">Any Board . Any Degree . Any Course.</h2>
         </div>
 
         <div className="flex flex-col gap-4 w-full">

@@ -150,27 +150,14 @@ export default function TermsConditions() {
             <h2 className="text-xl sm:text-2xl font-semibold text-[#130A40] mb-4">
               10. Contact
             </h2>
-            <p className="mb-3">
-              Augustus Richard J, 11, Mruthu Nagar, KK Pudur, Saibaba Colony,
-              Coimbatore 641038, India.
-            </p>
             <p className="space-y-1">
               <span className="block">
                 Email:{" "}
                 <a
-                  href="mailto:admin@bi.ai"
+                  href="mailto:contact@blearners.com"
                   className="text-[#4A54ED] hover:underline"
                 >
-                  admin@bi.ai
-                </a>
-              </span>
-              <span className="block">
-                Phone:{" "}
-                <a
-                  href="tel:+919087900041"
-                  className="text-[#4A54ED] hover:underline"
-                >
-                  +91 9087900041
+                  contact@blearners.com
                 </a>
               </span>
             </p>

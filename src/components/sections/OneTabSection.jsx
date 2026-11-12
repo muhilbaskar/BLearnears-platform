@@ -90,7 +90,7 @@ const TabletCard = memo(function TabletCard({ tablet, slotIdx }) {
       <img
         src={tabLogoImg}
         alt=""
-        className="absolute bottom-1 md:bottom-[1.2%] left-1/2 -translate-x-1/2 translate-y-1/2 z-40 w-[10px] md:w-[12px] h-auto object-contain drop-shadow-lg pointer-events-none"
+        className="absolute bottom-1 md:bottom-[1.2%] left-1/2 -translate-x-1/2 translate-y-1/2 z-40 w-[6px] min-[375px]:w-[7px] min-[425px]:w-[8px] md:w-[8px] lg:w-[9px] h-auto max-w-[9px] object-contain drop-shadow-lg pointer-events-none"
         draggable={false}
       />
     </div>

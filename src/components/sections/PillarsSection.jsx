@@ -35,17 +35,17 @@ const PillarCard = React.memo(function PillarCard({ pillar, index, side }) {
       viewport={{ once: true }}
       transition={{ delay: index * 0.1, duration: 0.5, ease: "easeOut" }}
       whileHover={hoverCard}
-      className="group relative bg-white p-8 rounded-[2rem] shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:shadow-[0_20px_40px_rgba(141,0,255,0.15)] border border-gray-100 hover:border-[#D4A5FF] transition-[box-shadow,border-color] duration-300 overflow-hidden"
+      className="group relative bg-white p-8 rounded-[2rem] shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:shadow-[0_20px_40px_rgba(141,0,255,0.15)] border border-gray-100 hover:border-[#D4A5FF] transition-[box-shadow,border-color] duration-300 overflow-hidden h-full flex flex-col items-center text-center"
     >
       <div className="absolute inset-0 rounded-[2rem] opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-500" style={glowStyle} />
       <div className="absolute top-0 left-0 h-[3px] w-full rounded-full origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-500 ease-out" style={barStyle} />
 
-      <div className={`w-12 h-12 bg-[#F4E8FF] group-hover:bg-[#E9D5FF] rounded-full flex items-center justify-center mb-6 relative z-10 transition-[transform,background-color] duration-300 group-hover:scale-110 ${spin}`}>
+      <div className={`w-12 h-12 shrink-0 bg-[#F4E8FF] group-hover:bg-[#E9D5FF] rounded-full flex items-center justify-center mb-6 relative z-10 transition-[transform,background-color] duration-300 group-hover:scale-110 ${spin}`}>
         <img src={customIcons[pillar.title]} alt="" width="24" height="24" loading="lazy" decoding="async" className="w-6 h-6 object-contain" />
       </div>
 
       <h3 className="text-[20px] font-bold text-[#0B0F19] mb-2 relative z-10 group-hover:text-[#8D00FF] transition-colors duration-300">{pillar.title}</h3>
-      <p className="text-[15px] text-[#6B7280] leading-[1.6] relative z-10">{pillar.desc}</p>
+      <p className="text-[15px] text-[#6B7280] leading-[1.6] relative z-10 flex-grow">{pillar.desc}</p>
     </m.div>
   );
 });
@@ -76,15 +76,15 @@ export default function PillarsSection() {
           </p>
         </m.div>
 
-        <div className="grid lg:grid-cols-3 gap-6 lg:gap-8 items-center">
-          <div className="space-y-6">
+        <div className="grid lg:grid-cols-3 gap-6 lg:gap-8 items-stretch">
+          <div className="flex flex-col gap-6">
             {pillars.slice(0, 2).map((p, i) => (
               <PillarCard key={p.title} pillar={p} index={i} side="left" />
             ))}
           </div>
 
           {/* Centre gateway graphic (unchanged look) */}
-          <div className="flex justify-center relative my-10 lg:my-0">
+          <div className="flex justify-center items-center relative my-10 lg:my-0">
             <div className="absolute inset-0 bg-purple-500/10 blur-[50px] rounded-full w-[250px] h-[250px] m-auto pointer-events-none" />
             <m.div
               initial={{ opacity: 0, scale: 0.5 }}
@@ -104,7 +104,7 @@ export default function PillarsSection() {
             </m.div>
           </div>
 
-          <div className="space-y-6">
+          <div className="flex flex-col gap-6">
             {pillars.slice(2).map((p, i) => (
               <PillarCard key={p.title} pillar={p} index={i} side="right" />
             ))}
