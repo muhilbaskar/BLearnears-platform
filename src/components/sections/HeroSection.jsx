@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useCallback } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { m } from "framer-motion";
 import { ArrowRight } from "lucide-react";
@@ -93,6 +93,9 @@ const TAGS = [
   { key: "result", video: resultVideo, icon: resultLogo, alt: "Result", label: "b-Result", pos: "bottom-[45%] -right-1 sm:right-0 md:right-[7.5%] lg:-right-[15%]" },
 ];
 
+// Order in which videos auto-play in the loop: start with b-Class, then the rest
+const AUTOPLAY_ORDER = ["class", "book", "assign", "store", "result"];
+
 const FloatingTag = React.memo(function FloatingTag({ tag, onSelect }) {
   return (
     <button type="button" onClick={() => onSelect(tag.video)} aria-label={`Show ${tag.label} preview`} className={`${tag.pos} ${TAG_BASE}`}>
@@ -102,32 +105,27 @@ const FloatingTag = React.memo(function FloatingTag({ tag, onSelect }) {
   );
 });
 
+// Small inline spinner shown over the tablet while the active video buffers
+const VideoSpinner = () => (
+  <div className="absolute inset-0 flex items-center justify-center z-30 pointer-events-none">
+    <div className="w-10 h-10 md:w-12 md:h-12 rounded-full border-4 border-white/25 border-t-white animate-spin" />
+  </div>
+);
+
 export default function HeroSection() {
   const [activeVideo, setActiveVideo] = useState(classVideo);
+  // Track which video key is active so we can advance the autoplay sequence
+  const [activeKey, setActiveKey] = useState("class");
+  // Loading state per video key (true = spinner visible)
+  const [isLoading, setIsLoading] = useState(true);
   const sectionRef = useRef(null);
   const videoRef = useRef(null);
   const inView = useInViewport(sectionRef, { rootMargin: "100px" });
   const heroZoom = useHeroZoom();
   const anchor = useAnchor();
-  // Don't even set a video src until the tablet is near the viewport...
+  // Don't even set a video src until the tablet is near the viewport.
+  // (Removed the page-idle gate so the video starts loading immediately on page load.)
   const near = useInViewport(sectionRef, { rootMargin: "200px", once: true });
-  // ...AND the page has finished loading + gone idle. Before, this video started downloading
-  // at the same moment as the big hero video above it, so the two fought for bandwidth
-  // (slower first frame on the hero video, worse LCP/TBT, stutter on slow networks).
-  const [pageIdle, setPageIdle] = useState(false);
-  React.useEffect(() => {
-    let cancelled = false;
-    const start = () => {
-      const idle = window.requestIdleCallback || ((cb) => setTimeout(cb, 600));
-      idle(() => !cancelled && setPageIdle(true), { timeout: 2500 });
-    };
-    if (document.readyState === "complete") start();
-    else window.addEventListener("load", start, { once: true });
-    return () => {
-      cancelled = true;
-      window.removeEventListener("load", start);
-    };
-  }, []);
 
   // Play only while the tablet is on screen
   React.useEffect(() => {
@@ -136,6 +134,28 @@ export default function HeroSection() {
     if (inView) v.play().catch(() => {});
     else v.pause();
   }, [inView, activeVideo]);
+
+  // Whenever the active video changes, reset the spinner
+  React.useEffect(() => {
+    setIsLoading(true);
+  }, [activeVideo]);
+
+  // Advance to the next video in the autoplay order (continuous loop)
+  const goToNext = useCallback(() => {
+    setActiveKey((prevKey) => {
+      const idx = AUTOPLAY_ORDER.indexOf(prevKey);
+      const nextKey = AUTOPLAY_ORDER[(idx + 1) % AUTOPLAY_ORDER.length];
+      const nextTag = TAGS.find((t) => t.key === nextKey);
+      if (nextTag) setActiveVideo(nextTag.video);
+      return nextKey;
+    });
+  }, []);
+
+  // User clicked a floating tag: switch video + key immediately (resets sequence)
+  const handleSelect = useCallback((video, key) => {
+    setActiveVideo(video);
+    setActiveKey(key);
+  }, []);
 
   return (
     <section
@@ -217,24 +237,29 @@ export default function HeroSection() {
             className="relative flex justify-center lg:justify-end mt-6 lg:mt-0"
           >
             {TAGS.map((t) => (
-              <FloatingTag key={t.key} tag={t} onSelect={setActiveVideo} />
+              <FloatingTag key={t.key} tag={t} onSelect={(video) => handleSelect(video, t.key)} />
             ))}
 
             <div className="w-full max-w-[340px] sm:max-w-none h-[520px] sm:w-[420px] sm:h-[600px] lg:w-[480px] lg:h-[680px] bg-[#1a1a1a] rounded-[2.5rem] md:rounded-[3rem] shadow-2xl relative z-10 p-3 md:p-4 flex flex-col">
               <div className="w-full h-full bg-black relative flex items-center justify-center overflow-hidden rounded-[2rem] md:rounded-[2.5rem]">
-                {near && pageIdle && (
-                <video
-                  ref={videoRef}
-                  key={activeVideo}
-                  src={`${activeVideo}#t=0.1`}
-                  preload="metadata"
-                  className="w-full h-full object-cover"
-                  autoPlay
-                  loop
-                  muted
-                  playsInline
-                  aria-hidden="true"
-                />
+                {isLoading && <VideoSpinner />}
+                {near && (
+                  <video
+                    ref={videoRef}
+                    key={activeVideo}
+                    src={`${activeVideo}#t=0.1`}
+                    preload="auto"
+                    className="w-full h-full object-cover"
+                    autoPlay
+                    muted
+                    playsInline
+                    aria-hidden="true"
+                    onLoadedData={() => setIsLoading(false)}
+                    onCanPlay={() => setIsLoading(false)}
+                    onPlaying={() => setIsLoading(false)}
+                    onWaiting={() => setIsLoading(true)}
+                    onEnded={goToNext}
+                  />
                 )}
               </div>
 

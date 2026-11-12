@@ -102,6 +102,9 @@ export default function OneTabSection() {
   const sectionRef = useRef(null);
   const inView = useInViewport(sectionRef, { rootMargin: "0px" });
 
+  // States for swipe/drag functionality
+  const dragStartRef = useRef(null);
+
   // Rotate only while the section is visible (and the tab is active)
   useEffect(() => {
     if (!inView) return undefined;
@@ -120,6 +123,32 @@ export default function OneTabSection() {
     });
     return slots;
   }, [rotation]);
+
+  // Swipe / Drag Handlers
+  const handlePointerDown = (e) => {
+    dragStartRef.current = e.clientX;
+  };
+
+  const handlePointerUp = (e) => {
+    if (dragStartRef.current === null) return;
+    const dragDistance = e.clientX - dragStartRef.current;
+    
+    // Threshold to prevent accidental swipes on simple clicks
+    if (Math.abs(dragDistance) > 50) {
+      if (dragDistance > 0) {
+        // Dragged Right -> Prev
+        setRotation((p) => (p - 1 + 3) % 3);
+      } else {
+        // Dragged Left -> Next
+        setRotation((p) => (p + 1) % 3);
+      }
+    }
+    dragStartRef.current = null;
+  };
+
+  const handlePointerCancel = () => {
+    dragStartRef.current = null;
+  };
 
   return (
     <section
@@ -148,7 +177,12 @@ export default function OneTabSection() {
           ))}
         </div>
 
-        <div className="relative flex justify-center items-end mt-10 md:-mt-16 w-full max-w-[1300px] mx-auto pb-16 md:pb-24 h-[360px] min-[375px]:h-[395px] min-[425px]:h-[420px] md:h-[560px] lg:h-[700px]">
+        <div 
+          className="relative flex justify-center items-end mt-10 md:-mt-16 w-full max-w-[1300px] mx-auto pb-16 md:pb-24 h-[360px] min-[375px]:h-[395px] min-[425px]:h-[420px] md:h-[560px] lg:h-[700px] select-none touch-pan-y"
+          onPointerDown={handlePointerDown}
+          onPointerUp={handlePointerUp}
+          onPointerCancel={handlePointerCancel}
+        >
           {TABLETS.map((tablet, tabletIdx) => (
             <TabletCard key={tablet.id} tablet={tablet} slotIdx={tabletSlot[tabletIdx]} />
           ))}
