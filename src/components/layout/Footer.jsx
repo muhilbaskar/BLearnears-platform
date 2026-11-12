@@ -22,10 +22,11 @@ const QUICK_LINKS = [
   { name: "Register", href: "#register" },
 ];
 
-// Same helper as Navbar: "/#section" from other pages, plain "#section" on home.
+// Same helper as Navbar: navigate to { pathname: "/", hash } so HashRouter builds
+// the correct in-page anchor URL on both "/" and any other route.
 const useAnchor = () => {
   const { pathname } = useLocation();
-  return (hash) => (pathname === "/" ? hash : `/${hash}`);
+  return (hash) => ({ pathname: "/", hash, ...(pathname === "/" ? {} : {}) });
 };
 
 const scrollToTop = (e) => {

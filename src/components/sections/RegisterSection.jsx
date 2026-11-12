@@ -88,11 +88,11 @@ const INITIAL_FORM = {
 
 const ROLE_OPTIONS = ["Administrator", "Teacher", "Student", "Parent", "Others"];
 
-// Same helper as Navbar/Footer. Needed for "#register-form" and "#bee" so the
-// banner's two buttons work from /privacy-policy and /terms-conditions too.
+// Same helper as Navbar/Footer: navigate to { pathname: "/", hash } so HashRouter
+// builds the correct in-page anchor URL on both "/" and any other route.
 const useAnchor = () => {
   const { pathname } = useLocation();
-  return (hash) => (pathname === "/" ? hash : `/${hash}`);
+  return (hash) => ({ pathname: "/", hash, ...(pathname === "/" ? {} : {}) });
 };
 
 export default function RegisterSection() {

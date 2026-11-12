@@ -1,5 +1,5 @@
 import React, { lazy, Suspense, useEffect } from "react";
-import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { HashRouter, Routes, Route, useLocation } from "react-router-dom";
 import { LazyMotion, domAnimation, MotionConfig } from "framer-motion";
 
 // Above-the-fold: loaded immediately
@@ -51,8 +51,11 @@ const Placeholder = ({ id, h = 600 }) => (
 //    the previous scroll position on refresh. Without this, the browser scrolls
 //    you back down after our reset, which is why the earlier attempts appeared
 //    to "not work".
-//  • If this was a real reload / navigate AND the URL has a #hash, strip it
-//    with replaceState (no extra history entry, Back/Forward still work).
+//  • With HashRouter the URL looks like "/#/privacy-policy" (route) or
+//    "/#/#features" (route + anchor) or "/#features" (pure anchor on home).
+//    On a real reload we must NOT strip a route hash — only a pure anchor
+//    hash that is not a known route. So the stripping logic is limited to
+//    the case where the fragment is NOT a route prefix ("/...").
 //  • Scroll to top across 3 timings so no browser paint wins the race.
 //
 // In-app SPA navigation (clicking Register / Features / BEE links) is NOT
@@ -69,12 +72,20 @@ const handleInitialReload = () => {
       window.history.scrollRestoration = "manual";
     }
 
-    // 2) Only strip the hash on a real page load / reload, not on SPA nav.
+    // 2) Only strip a PURE ANCHOR hash on a real page load / reload.
+    //    With HashRouter the whole route lives in the fragment:
+    //      "#/privacy-policy"      -> route, DO NOT strip
+    //      "#/terms-conditions"    -> route, DO NOT strip
+    //      "#/#features"           -> route "/" + anchor, DO NOT strip the route part
+    //      "#features"             -> pure anchor on home, safe to strip
+    //    So: strip only if the fragment does NOT start with "/".
     const nav = performance.getEntriesByType?.("navigation")?.[0];
     const navType = nav?.type; // "navigate" | "reload" | "back_forward" | "prerender"
     const isFreshLoad = navType === "navigate" || navType === "reload";
 
-    if (isFreshLoad && window.location.hash) {
+    const rawHash = window.location.hash; // includes leading "#"
+    if (isFreshLoad && rawHash && !rawHash.startsWith("#/")) {
+      // Pure anchor (e.g. "/#features") — remove it so we land at the top.
       const cleanUrl = window.location.pathname + window.location.search;
       window.history.replaceState(null, "", cleanUrl);
     }
@@ -93,15 +104,15 @@ handleInitialReload();
 // Reset scroll to top whenever the route changes (except when navigating to
 // an in-page anchor like #bee on the home page).
 //
-// When a hash IS present (e.g. arriving from /privacy-policy via "/#features"),
-// we scroll to the target — with a few RAF retries because the section is a lazy
-// chunk and may not be mounted on the first frame. This makes the nav / footer
-// quick links work from the policy pages without changing anything on "/" itself.
+// With HashRouter, `useLocation().hash` is the INNER hash (the part after the
+// route), e.g. for "/#/#features" the route is "/" and hash is "#features".
+// For "/#/privacy-policy" the route is "/privacy-policy" and hash is "".
+// This component therefore behaves identically to before.
 //
-// On a real reload: handleInitialReload() above has already stripped the hash
-// and disabled browser scroll restoration, so this component's first run just
-// sees a clean "/" and scrolls to top. In-app anchor clicks keep working
-// exactly as before.
+// On a real reload: handleInitialReload() above has already stripped a pure
+// anchor hash and disabled browser scroll restoration, so this component's
+// first run just sees a clean route and scrolls to top. In-app anchor clicks
+// keep working exactly as before.
 function ScrollToTop() {
   const { pathname, hash } = useLocation();
   useEffect(() => {
@@ -200,7 +211,7 @@ export default function App() {
     // MotionConfig: respects the OS "reduce motion" setting automatically
     <LazyMotion features={domAnimation} strict>
       <MotionConfig reducedMotion="user">
-        <BrowserRouter>
+        <HashRouter>
           <ScrollToTop />
           <div className="font-sans text-gray-900 bg-white">
             <StatusBar />
@@ -232,7 +243,7 @@ export default function App() {
               <Footer />
             </Suspense>
           </div>
-        </BrowserRouter>
+        </HashRouter>
       </MotionConfig>
     </LazyMotion>
   );

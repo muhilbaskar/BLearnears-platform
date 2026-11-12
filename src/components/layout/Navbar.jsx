@@ -7,14 +7,16 @@ import { AnimatePresence, m } from "framer-motion";
 import navLogo from "../../assets/Nav LOGO.svg";
 import { navLinks } from "../../data/content";
 
-// On "/" a plain hash scrolls instantly (native anchor).
-// On /privacy-policy or /terms-conditions we send the user to "/#section" so
-// react-router renders HomePage first; ScrollToTop in App.jsx intentionally does
-// NOT scroll to top when a hash is present, so the browser then jumps to the section.
+// With HashRouter the whole route lives in the fragment. To jump to an in-page
+// anchor:
+//   • on "/" -> navigate to { pathname: "/", hash: "#section" }  => "/#/#section"
+//   • on any other route -> navigate home first, then the anchor
+// Using the object form lets react-router build the correct hash URL for
+// both cases and keeps ScrollToTop working exactly as before.
 const useAnchor = () => {
   const { pathname } = useLocation();
   return useCallback(
-    (hash) => (pathname === "/" ? hash : `/${hash}`),
+    (hash) => ({ pathname: "/", hash, ...(pathname === "/" ? {} : {}) }),
     [pathname],
   );
 };

@@ -60,11 +60,11 @@ function useHeroZoom() {
   return zoom;
 }
 
-// Same helper as Navbar/Footer: "/#section" from other pages, plain "#section" on home.
-// This makes the hero buttons work from /privacy-policy and /terms-conditions too.
+// Same helper as Navbar/Footer: navigate to { pathname: "/", hash } so HashRouter
+// builds the correct in-page anchor URL on both "/" and any other route.
 const useAnchor = () => {
   const { pathname } = useLocation();
-  return (hash) => (pathname === "/" ? hash : `/${hash}`);
+  return (hash) => ({ pathname: "/", hash, ...(pathname === "/" ? {} : {}) });
 };
 
 const fadeInUp = {
