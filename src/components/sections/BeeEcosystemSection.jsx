@@ -105,7 +105,7 @@ const INNER_ITEMS = [
   { icon: bNoteIcon, alt: "b-Note", style: bNoteStyle, color: "#B89B5E", lines: ["b-Note"] },
   { icon: bClassIcon, alt: "b-Class", style: orb("#634596", "#B671F98C", "#B671F9"), color: "#8B5CF6", lines: ["b-Class"] },
   { icon: bBookIcon, alt: "b-Book", style: orb("#20828F", "#27EAEA8C", "#27EAEA"), color: "#4FD1C5", lines: ["b-Book"] },
-  { icon: bAssignmentIcon, alt: "b-Assignment", style: orb("#335F9D", "#59A6FF8C", "#59A6FF"), color: "#5A7BC0", lines: ["b-Assignment"] },
+  { icon: bAssignmentIcon, alt: "b-Assignment",  style: orb("#335F9D", "#59A6FF8C", "#59A6FF"), color: "#63B3ED", lines: ["b-Assignment"] },
   { icon: bStudentsIcon, alt: "b-Students", style: orb("#34C759", "#34C7598C", "#B671F9"), color: "#34C759", lines: ["b-Students"] },
 ];
 

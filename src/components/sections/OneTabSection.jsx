@@ -87,12 +87,23 @@ const TabletCard = memo(function TabletCard({ tablet, slotIdx }) {
           />
         )}
       </div>
-      <img
-        src={tabLogoImg}
-        alt=""
-        className="absolute bottom-1 md:bottom-[1.2%] left-1/2 -translate-x-1/2 translate-y-1/2 z-40 w-[6px] min-[375px]:w-[7px] min-[425px]:w-[8px] md:w-[8px] lg:w-[9px] h-auto max-w-[9px] object-contain drop-shadow-lg pointer-events-none"
-        draggable={false}
-      />
+
+      {/*
+        Tab logo: this wrapper covers exactly the bottom black bezel of the card.
+        Its height matches the card padding on every breakpoint
+        (p-2 = h-2, md:p-3 = md:h-3, lg:p-4 = lg:h-4), and flexbox centers the
+        logo horizontally AND vertically inside it, so the logo always sits in the
+        middle of the black border on all screen sizes.
+        The logo height is kept smaller than the bezel so it never overlaps the screen.
+      */}
+      <div className="absolute bottom-0 left-0 right-0 h-2 md:h-3 lg:h-4 z-40 flex items-center justify-center pointer-events-none">
+        <img
+          src={tabLogoImg}
+          alt=""
+          className="h-[5px] min-[425px]:h-[6px] md:h-[8px] lg:h-[10px] w-auto max-h-full object-contain drop-shadow-lg pointer-events-none"
+          draggable={false}
+        />
+      </div>
     </div>
   );
 });

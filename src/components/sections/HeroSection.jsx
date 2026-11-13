@@ -263,13 +263,22 @@ export default function HeroSection() {
                 )}
               </div>
 
-              <img
-                src={tabLogoImg}
-                alt=""
-                width="12"
-                height="12"
-                className="absolute bottom-1 md:bottom-[0%] left-1/2 -translate-x-1/2 z-40 w-[10px] md:w-[12px] h-auto object-contain drop-shadow-lg"
-              />
+              {/*
+                Tab logo: the wrapper occupies exactly the bottom black bezel
+                (h-3 = the p-3 padding on mobile, md:h-4 = the md:p-4 padding)
+                and flex-centers the logo both horizontally and vertically, so it
+                always sits in the middle of the black border on every screen size.
+                The logo height is capped on mobile so it never overlaps the screen.
+              */}
+              <div className="absolute bottom-0 left-0 right-0 h-3 md:h-4 z-40 flex items-center justify-center pointer-events-none">
+                <img
+                  src={tabLogoImg}
+                  alt=""
+                  width="12"
+                  height="12"
+                  className="h-[9px] w-auto md:h-auto md:w-[12px] max-h-full object-contain drop-shadow-lg"
+                />
+              </div>
             </div>
           </m.div>
         </div>

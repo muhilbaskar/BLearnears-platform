@@ -169,18 +169,6 @@ export default function RegisterSection() {
   const isLoading = status === "loading";
   const isOthers = form.role === "Others";
 
-  // Switches the "role" field back from the free-text input to the dropdown,
-  // keeping focus on the select afterwards.
-  const backToSelect = () => {
-    setForm((f) => ({ ...f, role: "Administrator" }));
-    setCustomRole("");
-    setErrors((prev) => (prev.role ? { ...prev, role: undefined } : prev));
-    requestAnimationFrame(() => {
-      const el = document.getElementById("role");
-      if (el) el.focus();
-    });
-  };
-
   return (
     <section id="register" className="cv-auto py-16 md:py-24 bg-white overflow-hidden">
       <div className="w-full px-4 sm:px-6 lg:px-8">
@@ -277,8 +265,12 @@ export default function RegisterSection() {
               />
 
               {/* ROLE: dropdown by default; when "Others" is selected, an editable
-                  text input appears in its place with a placeholder, and the chevron
-                  stays visible on the right so the user can switch back to the list. */}
+                  text input appears in its place with a placeholder.
+                  
+                  FIX: We stretch a transparent native <select> across the ENTIRE 
+                  input field. Clicking anywhere (or the chevron) opens the true 
+                  system dropdown, perfectly aligned under the full input width,
+                  keeping "Others" selected without auto-selecting "Administrator". */}
               <div>
                 <label htmlFor="role" className="block text-[13px] font-medium text-[#1A233A] mb-1.5">
                   I am a *
@@ -286,6 +278,7 @@ export default function RegisterSection() {
                 <div className="relative">
                   {isOthers ? (
                     <>
+                      {/* Custom text input for typing "Others" */}
                       <input
                         ref={roleInputRef}
                         id="role"
@@ -303,15 +296,34 @@ export default function RegisterSection() {
                         aria-describedby={errors.role ? "role-error" : undefined}
                         className={`${INPUT_CLS} pr-12`}
                       />
-                      {/* Chevron doubles as a "back to dropdown" button in input mode. */}
-                      <button
-                        type="button"
-                        onClick={backToSelect}
-                        aria-label="Switch back to role list"
-                        className="absolute inset-y-0 right-3 flex items-center justify-center text-[#1A233A] hover:text-[#8B3DFF] transition-colors"
+                      
+                      {/* INVISIBLE NATIVE SELECT OVERLAY (FULL WIDTH):
+                          Clicking anywhere in the field opens the native system dropdown.
+                          The dropdown aligns correctly with the full width of the input. */}
+                      <select
+                        aria-label="Switch role type"
+                        value={form.role}
+                        onChange={(e) => {
+                          const newRole = e.target.value;
+                          setForm((f) => ({ ...f, role: newRole }));
+                          if (newRole !== "Others") {
+                            setCustomRole("");
+                          }
+                          setErrors((prev) => (prev.role ? { ...prev, role: undefined } : prev));
+                        }}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                       >
+                        {ROLE_OPTIONS.map((r) => (
+                          <option key={r} value={r}>
+                            {r}
+                          </option>
+                        ))}
+                      </select>
+
+                      {/* Visual Chevron (purely decorative, clicks pass through to the transparent select) */}
+                      <div className="absolute inset-y-0 right-3 flex items-center justify-center text-[#1A233A] pointer-events-none">
                         <ChevronDown size={16} />
-                      </button>
+                      </div>
                     </>
                   ) : (
                     <>
