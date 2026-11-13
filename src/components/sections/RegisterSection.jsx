@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { m } from "framer-motion";
 import { ArrowRight, Loader2, ChevronDown } from "lucide-react";
@@ -169,6 +169,14 @@ export default function RegisterSection() {
   const isLoading = status === "loading";
   const isOthers = form.role === "Others";
 
+  // When "Others" gets selected, move the cursor into the text input right away
+  // so the user can start typing their role without an extra click.
+  useEffect(() => {
+    if (isOthers && roleInputRef.current) {
+      roleInputRef.current.focus();
+    }
+  }, [isOthers]);
+
   return (
     <section id="register" className="cv-auto py-16 md:py-24 bg-white overflow-hidden">
       <div className="w-full px-4 sm:px-6 lg:px-8">
@@ -266,11 +274,14 @@ export default function RegisterSection() {
 
               {/* ROLE: dropdown by default; when "Others" is selected, an editable
                   text input appears in its place with a placeholder.
-                  
-                  FIX: We stretch a transparent native <select> across the ENTIRE 
-                  input field. Clicking anywhere (or the chevron) opens the true 
-                  system dropdown, perfectly aligned under the full input width,
-                  keeping "Others" selected without auto-selecting "Administrator". */}
+
+                  FIX: Previously the transparent <select> covered the ENTIRE input
+                  (absolute inset-0, z-10), so it swallowed every click and the user
+                  could never focus or type in the text input. Now the transparent
+                  <select> only covers the chevron area on the right (w-12), so:
+                    - clicking / typing in the text area  -> editable input
+                    - clicking the chevron                -> native dropdown to switch role
+                  The input is also auto-focused when "Others" is chosen (see useEffect). */}
               <div>
                 <label htmlFor="role" className="block text-[13px] font-medium text-[#1A233A] mb-1.5">
                   I am a *
@@ -278,7 +289,7 @@ export default function RegisterSection() {
                 <div className="relative">
                   {isOthers ? (
                     <>
-                      {/* Custom text input for typing "Others" */}
+                      {/* Editable text input for typing a custom role */}
                       <input
                         ref={roleInputRef}
                         id="role"
@@ -296,10 +307,11 @@ export default function RegisterSection() {
                         aria-describedby={errors.role ? "role-error" : undefined}
                         className={`${INPUT_CLS} pr-12`}
                       />
-                      
-                      {/* INVISIBLE NATIVE SELECT OVERLAY (FULL WIDTH):
-                          Clicking anywhere in the field opens the native system dropdown.
-                          The dropdown aligns correctly with the full width of the input. */}
+
+                      {/* INVISIBLE NATIVE SELECT OVERLAY (CHEVRON AREA ONLY):
+                          Sits only over the right-hand chevron so the text input stays
+                          fully clickable/editable. Clicking the chevron opens the native
+                          system dropdown to switch back to another role. */}
                       <select
                         aria-label="Switch role type"
                         value={form.role}
@@ -311,7 +323,7 @@ export default function RegisterSection() {
                           }
                           setErrors((prev) => (prev.role ? { ...prev, role: undefined } : prev));
                         }}
-                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                        className="absolute inset-y-0 right-0 w-12 h-full opacity-0 cursor-pointer z-10"
                       >
                         {ROLE_OPTIONS.map((r) => (
                           <option key={r} value={r}>
