@@ -1,4 +1,3 @@
-import React from "react";
 import { Link, useLocation } from "react-router-dom";
 
 import Logo from "../../assets/footer/logo.svg";
@@ -78,8 +77,8 @@ export default function Footer() {
                 ))}
               </div>
             </div>
-
-            <div className="col-span-2 md:col-span-1">
+ {/* news letter subscription form is commented out for now, can be enabled in future if needed */}
+            {/* <div className="col-span-2 md:col-span-1">
               <h4 className="text-[18px] font-medium mb-3 text-white">Subscribe Newsletter</h4>
               <form className="flex items-center w-full sm:max-w-[340px]" onSubmit={(e) => e.preventDefault()}>
                 <label htmlFor="newsletter-email" className="sr-only">Email address</label>
@@ -100,7 +99,7 @@ export default function Footer() {
                   Send
                 </button>
               </form>
-            </div>
+            </div> */}
           </div>
 
           {/* Quick links */}
