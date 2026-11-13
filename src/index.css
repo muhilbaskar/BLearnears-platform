@@ -214,3 +214,34 @@ svg {
 @media (min-width: 1920px) { :root { --container-padding: 6rem;  --section-padding-y: 8rem; } }
 @media (min-width: 2560px) { :root { --container-padding: 8rem;  --section-padding-y: 10rem; } }
 @media (min-width: 3840px) { :root { --container-padding: 12rem; --section-padding-y: 14rem; } }
+
+/* ============================================
+   Tablet loading animation (matches loading.json look)
+   8 dots orbiting + pulsing in a pink -> orange gradient.
+   GPU-only (transform / opacity) so it is cheap on phones.
+   ============================================ */
+.tablet-loader {
+  position: relative;
+  display: inline-block;
+  pointer-events: none;
+}
+.tablet-loader-dot {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 20%;
+  height: 20%;
+  margin: -10% 0 0 -10%;
+  border-radius: 50%;
+  transform-origin: 50% 200%;
+  animation: tablet-loader-pulse 1.2s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+@keyframes tablet-loader-pulse {
+  0%, 100% { opacity: 0.25; }
+  40%      { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tablet-loader-dot { animation: none !important; opacity: 0.6; }
+}

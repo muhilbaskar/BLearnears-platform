@@ -4,6 +4,7 @@ import { m } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import useInViewport from "../../hooks/useInViewport";
 import { getPageScale } from "../../utils/pageScale";
+import TabletLoader from "../ui/TabletLoader";
 
 // FIX: absolute "/src/..." import breaks in production -> relative import
 import vectorImg from "../../assets/hero/Vector.svg";
@@ -105,10 +106,10 @@ const FloatingTag = React.memo(function FloatingTag({ tag, onSelect }) {
   );
 });
 
-// Small inline spinner shown over the tablet while the active video buffers
+// Loading animation shown over the tablet while the active video buffers
 const VideoSpinner = () => (
   <div className="absolute inset-0 flex items-center justify-center z-30 pointer-events-none">
-    <div className="w-10 h-10 md:w-12 md:h-12 rounded-full border-4 border-white/25 border-t-white animate-spin" />
+    <TabletLoader size={52} label="Loading video preview" />
   </div>
 );
 
@@ -241,7 +242,7 @@ export default function HeroSection() {
             ))}
 
             <div className="w-full max-w-[340px] sm:max-w-none h-[520px] sm:w-[420px] sm:h-[600px] lg:w-[480px] lg:h-[680px] bg-[#1a1a1a] rounded-[2.5rem] md:rounded-[3rem] shadow-2xl relative z-10 p-3 md:p-4 flex flex-col">
-              <div className="w-full h-full bg-black relative flex items-center justify-center overflow-hidden rounded-[2rem] md:rounded-[2.5rem]">
+              <div className="w-full h-full bg-white relative flex items-center justify-center overflow-hidden rounded-[2rem] md:rounded-[2.5rem]">
                 {isLoading && <VideoSpinner />}
                 {near && (
                   <video
